@@ -39,9 +39,8 @@ public class Main {
      * https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm
      *
      * 因为微服务已经成为构建基于云的应用程序的更常见的架构模式之一，Spring 社区为开发者提供了 Spring
-     * Cloud。Spring Cloud 框架使得将微服务部署到私有云或公共云（公有云）变得更简单。Spring Cloud
-     * 把几种流行的云管理微服务框架整合到共同的框架下，在代码里使用注解使得这些技术的使用和部署变得更
-     * 容易。
+     * Cloud。Spring Cloud 框架使得将微服务部署到私有云或公有云变得更简单。Spring Cloud 把几种流行
+     * 的云管理微服务框架整合到共同的框架下，在代码里使用注解使得这些技术的使用和部署变得更容易。
      */
     public static void main(String[] args) {
 
