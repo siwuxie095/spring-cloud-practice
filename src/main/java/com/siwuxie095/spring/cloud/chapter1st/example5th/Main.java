@@ -47,6 +47,12 @@ public class Main {
      * 这个 mvn 命令，将使用一个 Spring Boot 插件，启动内嵌 Tomcat 服务器的应用程序。Spring Boot 服务将
      * 通过控制台的服务端口，与暴露的端点通信。
      *
+     *
+     * PS：Java vs. Groovy and Maven vs. Gradle
+     * Spring Boot 框架为 java 和 Groovy 编程语言提供强大的支持。你可以使用 Groovy 构建微服务而无需项目
+     * 设置。Spring Boot 还支持 Maven 和 Gradle 构建工具。这里的例子使用 java 和 Maven。
+     *
+     *
      * 通过启动日志可以注意到两件事情。首先，一个 Tomcat 服务器使用端口 8080 启动。其次，/hello/{firstName}
      * /{lastName} 端点以 GET 方式暴露在服务器上。
      *
