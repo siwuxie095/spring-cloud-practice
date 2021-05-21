@@ -3,21 +3,20 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.siwuxie095.spring.cloud</groupId>
         <artifactId>spring-cloud-practice</artifactId>
+        <groupId>com.siwuxie095.spring.cloud</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>chapter1st-demo1st</artifactId>
+    <artifactId>chapter2nd-demo1st</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>chapter1st demo1st parent pom</name>
-    <description>Parent Pom for the chapter1st demo1st project</description>
-
     <modules>
-        <module>simple-service</module>
+        <module>licensing-service</module>
     </modules>
+    <packaging>pom</packaging>
+    <name>chapter2st demo1st parent pom</name>
+    <description>Parent Pom for the chapter2st demo1st project</description>
 
     <build>
         <plugins>
