@@ -1,0 +1,23 @@
+version: '2'
+services:
+  database:
+    extends:
+      file: ../common/docker-compose.yml
+      service: database
+    environment:
+      POSTGRES_USER: "postgres_dev"
+      POSTGRES_PASSWORD: "p0stgr@s_dev"
+      POSTGRES_DB:       "eagle_eye_dev"
+  configserver:
+    extends:
+      file: ../common/docker-compose.yml
+      service: configserver
+  licensing-service:
+     image: siwuxie095/licensing-service:chapter3rd-demo1st
+     ports:
+       - "8080:8080"
+     environment:
+       PROFILE: "dev"
+       CONFIGSERVER_URI: "http://config-server:8888"
+       CONFIGSERVER_PORT:   "8888"
+       DATABASESERVER_PORT: "5432"
