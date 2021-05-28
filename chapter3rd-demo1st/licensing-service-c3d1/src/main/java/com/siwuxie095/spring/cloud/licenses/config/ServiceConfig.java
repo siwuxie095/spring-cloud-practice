@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  */
 @SuppressWarnings("all")
 @Component
-public class ServiceConfig{
+public class ServiceConfig {
 
     @Value("${example.property}")
     private String exampleProperty;
@@ -17,4 +17,5 @@ public class ServiceConfig{
     public String getExampleProperty(){
         return exampleProperty;
     }
+
 }
