@@ -1,6 +1,6 @@
 spring:
   application:
-    name: organizationservice
+    name: organization-service
   profiles:
     active:
       default
