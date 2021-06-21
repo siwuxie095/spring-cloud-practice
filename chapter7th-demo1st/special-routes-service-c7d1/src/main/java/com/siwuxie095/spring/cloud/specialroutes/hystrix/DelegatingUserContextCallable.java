@@ -1,7 +1,7 @@
 package com.siwuxie095.spring.cloud.specialroutes.hystrix;
 
-import com.siwuxie095.spring.cloud.authentication.utils.UserContext;
-import com.siwuxie095.spring.cloud.authentication.utils.UserContextHolder;
+import com.siwuxie095.spring.cloud.specialroutes.utils.UserContext;
+import com.siwuxie095.spring.cloud.specialroutes.utils.UserContextHolder;
 
 import java.util.concurrent.Callable;
 

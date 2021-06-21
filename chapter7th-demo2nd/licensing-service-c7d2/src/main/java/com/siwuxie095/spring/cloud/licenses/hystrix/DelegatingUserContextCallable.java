@@ -1,7 +1,7 @@
 package com.siwuxie095.spring.cloud.licenses.hystrix;
 
-import com.siwuxie095.spring.cloud.authentication.utils.UserContext;
-import com.siwuxie095.spring.cloud.authentication.utils.UserContextHolder;
+import com.siwuxie095.spring.cloud.licenses.utils.UserContext;
+import com.siwuxie095.spring.cloud.licenses.utils.UserContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;

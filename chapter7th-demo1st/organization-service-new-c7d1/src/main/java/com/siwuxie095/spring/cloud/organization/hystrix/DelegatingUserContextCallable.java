@@ -1,7 +1,8 @@
 package com.siwuxie095.spring.cloud.organization.hystrix;
 
-import com.siwuxie095.spring.cloud.authentication.utils.UserContext;
-import com.siwuxie095.spring.cloud.authentication.utils.UserContextHolder;
+
+import com.siwuxie095.spring.cloud.organization.utils.UserContext;
+import com.siwuxie095.spring.cloud.organization.utils.UserContextHolder;
 
 import java.util.concurrent.Callable;
 
