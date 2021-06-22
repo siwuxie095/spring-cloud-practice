@@ -54,8 +54,8 @@ public class Application {
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
         JedisConnectionFactory jedisConnFactory = new JedisConnectionFactory();
-        jedisConnFactory.setHostName( serviceConfig.getRedisServer());
-        jedisConnFactory.setPort( serviceConfig.getRedisPort() );
+        jedisConnFactory.setHostName(serviceConfig.getRedisServer());
+        jedisConnFactory.setPort(serviceConfig.getRedisPort() );
         return jedisConnFactory;
     }
 

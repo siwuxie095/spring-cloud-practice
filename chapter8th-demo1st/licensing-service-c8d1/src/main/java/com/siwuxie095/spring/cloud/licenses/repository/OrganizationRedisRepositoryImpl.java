@@ -15,12 +15,13 @@ import javax.annotation.PostConstruct;
 @SuppressWarnings("all")
 @Repository
 public class OrganizationRedisRepositoryImpl implements OrganizationRedisRepository {
+
     private static final String HASH_NAME ="organization";
 
     private RedisTemplate<String, Organization> redisTemplate;
     private HashOperations hashOperations;
 
-    public OrganizationRedisRepositoryImpl(){
+    public OrganizationRedisRepositoryImpl() {
         super();
     }
 
@@ -54,5 +55,6 @@ public class OrganizationRedisRepositoryImpl implements OrganizationRedisReposit
     public Organization findOrganization(String organizationId) {
         return (Organization) hashOperations.get(HASH_NAME, organizationId);
     }
+
 }
 

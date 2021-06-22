@@ -260,7 +260,7 @@ public class Main {
      *   cloud:
      *     stream:
      *       bindings:
-     *         inboundOrgChanges:
+     *         input:
      *           destination: orgChangeTopic
      *           content-type: application/json
      *           group: licensingGroup

@@ -43,7 +43,6 @@ public class OrganizationChangeHandler {
             default:
                 logger.error("Received an UNKNOWN event from the organization service of type {}", orgChange.getType());
                 break;
-
         }
     }
 

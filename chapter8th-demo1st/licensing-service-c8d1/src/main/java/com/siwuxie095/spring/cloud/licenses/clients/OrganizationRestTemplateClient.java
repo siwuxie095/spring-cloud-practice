@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 @SuppressWarnings("all")
 @Component
 public class OrganizationRestTemplateClient {
+
     @Autowired
     RestTemplate restTemplate;
 
@@ -29,8 +30,7 @@ public class OrganizationRestTemplateClient {
     private Organization checkRedisCache(String organizationId) {
         try {
             return orgRedisRepo.findOrganization(organizationId);
-        }
-        catch (Exception ex){
+        } catch (Exception ex) {
             logger.error("Error encountered while trying to retrieve organization {} check Redis Cache.  Exception {}", organizationId, ex);
             return null;
         }
@@ -39,7 +39,7 @@ public class OrganizationRestTemplateClient {
     private void cacheOrganizationObject(Organization org) {
         try {
             orgRedisRepo.saveOrganization(org);
-        }catch (Exception ex){
+        } catch (Exception ex) {
             logger.error("Unable to cache organization {} in Redis. Exception {}", org.getId(), ex);
         }
     }
@@ -49,7 +49,7 @@ public class OrganizationRestTemplateClient {
 
         Organization org = checkRedisCache(organizationId);
 
-        if (org!=null){
+        if (org != null) {
             logger.debug("I have successfully retrieved an organization {} from the redis cache: {}", organizationId, org);
             return org;
         }
@@ -65,13 +65,12 @@ public class OrganizationRestTemplateClient {
         /*Save the record from cache*/
         org = restExchange.getBody();
 
-        if (org!=null) {
+        if (org != null) {
             cacheOrganizationObject(org);
         }
 
         return org;
     }
-
 
 }
 
