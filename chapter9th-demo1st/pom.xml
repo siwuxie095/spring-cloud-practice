@@ -9,18 +9,19 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>chapter8th-demo1st</artifactId>
+    <artifactId>chapter9th-demo1st</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <modules>
-        <module>config-server-c8d1</module>
-        <module>eureka-server-c8d1</module>
-        <module>licensing-service-c8d1</module>
-        <module>organization-service-c8d1</module>
-        <module>zuul-server-c8d1</module>
+        <module>config-server-c9d1</module>
+        <module>eureka-server-c9d1</module>
+        <module>licensing-service-c9d1</module>
+        <module>organization-service-c9d1</module>
+        <module>zipkin-server-c9d1</module>
+        <module>zuul-server-c9d1</module>
     </modules>
     <packaging>pom</packaging>
-    <name>chapter8th demo1st parent pom</name>
-    <description>Parent Pom for the chapter8th demo1st project</description>
+    <name>chapter9th demo1st parent pom</name>
+    <description>Parent Pom for the chapter9th demo1st project</description>
 
     <build>
         <plugins>
@@ -35,7 +36,4 @@
             </plugin>
         </plugins>
     </build>
-
-
-
 </project>

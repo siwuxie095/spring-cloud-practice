@@ -27,6 +27,7 @@
         <module>chapter7th-demo1st</module>
         <module>chapter7th-demo2nd</module>
         <module>chapter8th-demo1st</module>
+        <module>chapter9th-demo1st</module>
     </modules>
 
     <properties>
