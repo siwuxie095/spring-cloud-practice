@@ -15,8 +15,9 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("all")
 @Component
 public class ResponseFilter extends ZuulFilter {
-    private static final int  FILTER_ORDER=1;
-    private static final boolean  SHOULD_FILTER=true;
+
+    private static final int  FILTER_ORDER = 1;
+    private static final boolean  SHOULD_FILTER = true;
     private static final Logger logger = LoggerFactory.getLogger(ResponseFilter.class);
 
 
