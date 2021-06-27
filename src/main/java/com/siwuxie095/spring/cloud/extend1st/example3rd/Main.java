@@ -10,7 +10,7 @@ public class Main {
      * 从 GitHub 下载项目
      *
      * 这里的所有源代码都在 GitHub 存储库（http://github.com/carnellj）中。每一部分都有自己的源代码
-     * 存储库。下面是这里使用的所有 GitHub 存储库的清单。
+     * 存储库。下面是这里使用的所有 GitHub 存储库的列表。
      * 第 1 部分：http://github.com/carnellj/spmia-chapter1。
      * 第 2 部分：http://github.com/carnellj/spmia-chapter2。
      * 第 3 部分：http://github.com/carnellj/spmia-chapter3 和 http://github.com/carnellj/config-repo。
