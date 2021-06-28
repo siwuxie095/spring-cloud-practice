@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
  * @date 2021-05-08 21:07:46
  */
 @SuppressWarnings("all")
-// 告诉 Spring Boot 框架，这是 Spring Boot 服务的入口点。
+// 告诉 Spring Boot 框架，该类是 Spring Boot 服务的入口点
 @SpringBootApplication
-// 告诉 Spring Boot，这个类将作为 Spring RestController 暴露
+// 告诉 Spring Boot，要将该类中的代码公开为 Spring RestController 类
 @RestController
-// 这个应用程序的所有 URL 将以前缀 /hello 进行暴露
+// 此应用程序中公开的所有 URL 将以 /hello 前缀开头
 @RequestMapping(value="hello")
 public class Application {
 
@@ -24,12 +24,12 @@ public class Application {
         SpringApplication.run(Application.class, args);
     }
 
-    // Spring Boot 将端点暴露为基于 GET 的 REST 端点，它将接受两个参数：firstName 和 lastName
+    // Spring Boot 公开为一个基于 GET 方法的 REST 端点，它将使用两个参数，即 firstName 和 lastName
     @RequestMapping(value="/{firstName}/{lastName}",method = RequestMethod.GET)
-    // 将 URL 传入的 firstName 和 lastName 参数映射到 hello 方法的两个变量
+    // 将 URL 中传入的 firstName 和 lastName 参数映射为传递给 hello 方法的两个变量
     public String hello( @PathVariable("firstName") String firstName,
                          @PathVariable("lastName") String lastName) {
-        // 返回一个手动编写的简单 JSON 字符串
+        // 返回一个手动构建的简单 JSON 字符串
         return String.format("{\"message\":\"Hello %s %s\"}", firstName, lastName);
     }
 
