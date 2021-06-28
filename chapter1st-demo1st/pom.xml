@@ -16,7 +16,7 @@
     <description>Parent Pom for the chapter1st demo1st project</description>
 
     <modules>
-        <module>simple-service</module>
+        <module>simple-service-c1d1</module>
     </modules>
 
     <build>
