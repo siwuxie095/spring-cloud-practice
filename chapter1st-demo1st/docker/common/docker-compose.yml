@@ -1,6 +1,6 @@
 version: '2'
 services:
-  simple-service:
-      image: siwuxie095/simple-service:chapter1st-demo1st
+  simpleservice:
+      image: johncarnell/tmx-simple-service:chapter1
       ports:
         - "8080:8080"
