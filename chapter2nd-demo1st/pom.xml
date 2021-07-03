@@ -12,7 +12,7 @@
     <artifactId>chapter2nd-demo1st</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <modules>
-        <module>licensing-service</module>
+        <module>licensing-service-c2d1</module>
     </modules>
     <packaging>pom</packaging>
     <name>chapter2st demo1st parent pom</name>

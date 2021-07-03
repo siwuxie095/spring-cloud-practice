@@ -1,6 +1,6 @@
 version: '2'
 services:
   licensingservice:
-      image: siwuxie095/licensing-service:chapter2nd-demo1st
+      image: johncarnell/tmx-licensing-service:chapter2
       ports:
         - "8080:8080"
