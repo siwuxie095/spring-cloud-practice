@@ -8,20 +8,30 @@ package com.siwuxie095.spring.cloud.chapter1st.example11th;
 public class Main {
 
     /**
-     * 使用 Spring Cloud 举例
+     * 通过示例来介绍 Spring Cloud
      *
-     * 这里举一个简单的例子，演示 Spring Cloud 如何将服务发现、断路器、舱壁和远程服务的客户端负载均衡集成到示例中。
+     * 在这里，来概要回顾一下要使用的各种 Spring Cloud 技术。因为每一种技术都是独立的服务，要详细介绍这些服务，这里的
+     * 内容肯定不够，所以仅作简要介绍。与此同时，留下一个小小的代码示例，它再次演示了将这些技术集成到微服务开发工作中是
+     * 多么容易。
      *
+     * 值得注意的是，这个代码示例不能运行，因为它需要设置和配置许多支持服务才能使用。不过，不要担心，在设置服务方面，这
+     * 些 Spring Cloud 服务（配置服务，服务发现）的设置是一次性的。一旦设置完成，微服务就可以不断使用这些功能。而在这
+     * 里的开头部分，无法将所有的精华都融入一个代码示例中。
+     *
+     * 如下代码快速演示了如何将远程服务的服务发现、断路器、舱壁以及客户端负载均衡集成到 "Hello World" 示例中。
+     *
+     * // 为了简洁，省略了其他 import 语句
      * import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
      * import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
      * import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
      * import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
      *
-     *
      * @SpringBootApplication
      * @RestController
      * @RequestMapping(value="hello")
+     * // 使服务能够使用 Hystrix 和 Ribbon 库
      * @EnableCircuitBreaker
+     * // 告诉服务，它应该使用 Eureka 服务发现代理注册自身，并且服务调用是使用服务发现来 "查找" 远程服务的位置的
      * @EnableEurekaClient
      * public class Application {
      *
@@ -29,52 +39,63 @@ public class Main {
      *         SpringApplication.run(Application.class, args);
      *     }
      *
-     *     @HystrixCommand(threadPoolKey = "helloThreadPool")
-     *     public String helloRemoteServiceCall(String firstName,
-     *                                          String lastName) {
-     *         ResponseEntity<String> restExchange =
-     *                 restTemplate.exchange(
-     *                         "http://logical-service-id/name/[ca]{firstName}/{lastName}",
-     *                         HttpMethod.GET,
-     *                         null, String.class, firstName, lastName);
-     *         return restExchange.getBody();
+     *     // 包装器使用 Hystrix 断路器调用 helloRemoteServiceCall 方法
+     *     @HystrixCommand(threadPoolKey = "helloThreadPool")　
+     *     public String helloRemoteServiceCall(String firstName, String lastName){
+     *     // 使用一个装饰好的 RestTemplate 类来获取一个 "逻辑" 服务 ID，Eureka 在幕后查找服务的物理位置
+     *     ResponseEntity<String> restExchange =
+     *        restTemplate.exchange(
+     *            "http://logical-service-id/name/[ca]{firstName}/{lastName}",
+     *            HttpMethod.GET,
+     *            null, String.class, firstName, lastName);
+     *
+     *     return restExchange.getBody();
+     *
      *     }
-     *
-     *
      *     @RequestMapping(value="/{firstName}/{lastName}", method = RequestMethod.GET)
      *     public String hello(@PathVariable("firstName") String firstName,
-     *                          @PathVariable("lastName") String lastName) {
+     *        @PathVariable("lastName") String lastName) {
      *         return helloRemoteServiceCall(firstName, lastName);
      *     }
-     *
      * }
      *
-     * 这段代码挤满了很多事情，你应该注意的第一件事是：@EnableCircuitBreaker 和 @EnableEurekaClient 注解。
-     * @EnableCircuitBreaker 注解告诉你，Spring 微服务将在你的应用中使用 Netflix 的 Hystrix 库。
-     * @EnableEurekaClient 注解告诉你，Spring 微服务使用 Eureka 服务发现代理注册其本身，你要使用服务发现查
-     * 找在你的代码里的远程 REST 服务端点。请注意，配置正在发生在一个属性文件中，它将告诉简单的服务要联系的
-     * Eureka 服务器的位置和端口号。当你声明你的 hello 方法时，你将第一次看到 Hystrix 被使用。
+     * 这段代码包含了很多内容，下面来慢慢分析。
      *
-     * @HystrixCommand 注解将做两件事情。首先，任何时候 helloRemoteServiceCall 方法被调用时，它不会被直接
-     * 调用。相反，该方法将被委派到被 Hystrix 管理的一个线程池。如果调用时间太长(默认是 1 秒)，将进入 Hystrix
-     * 并中断调用。这就是断路器模式的实现。其次，该注释的作用是创建一个称为 helloThreadPool 的线程池，它由
-     * Hystrix 管理。所有到 helloRemoteServiceCall 方法的调用只会发生在这个线程池，并且由任何其他远程服务发
-     * 起的调用将被隔离。
+     * 开发人员首先应该要注意的是 @EnableCircuitBreaker 和 @EnableEurekaClient 注解。@EnableCircuitBreaker
+     * 注解告诉 Spring 微服务，将要在应用程序使用 Netflix Hystrix 库。@EnableEurekaClient 注解告诉微服务使用
+     * Eureka 服务发现代理去注册它自己，并且将要在代码中使用服务发现去查询远程 REST 服务端点。注意，配置是在一个属
+     * 性文件中的，该属性文件告诉服务要进行通信的 Eureka 服务器的地址和端口号。
      *
-     * 最后要注意的一件事是在 helloRemoteServiceCall 方法内发生了什么。@EnableEurekaClient 的存在告诉
-     * Spring Boot，每当你做出一个 REST 服务调用，你要使用一个修改的 RestTemplate 类（这不是标准的 Spring
-     * RestTemplate 开箱即用）。RestTemplate 类将允许你为你试图调用的服务引入一个逻辑服务 ID，正如这里看到
-     * 的，RestTemplate 类将与 Eureka 服务联系，并查找一个或多个 "名称" 服务实例的物理位置。作为服务的消费者，
-     * 你的代码永远不必知道该服务位于何处。
+     * 你第一次看到使用 Hystrix 是在声明 hello 方法时：
      *
-     * 另外，RestTemplate 类使用 Netflix 的 Ribbon 库。Ribbon 将取回与服务相关联的所有物理端点的列表。每次
-     * 服务被客户端调用时，它对客户端不同服务实例采用 "round-robins" 调用，而不必经过一个集中的负载均衡器。通
-     * 过消除集中式负载均衡器并将其移动到客户端，你将在应用程序基础设施中消除另一个故障点（负载均衡器停止运行）。
-     * 在这一点上希望你能留下深刻的印象，因为你已经添加了相当多的微服务能力，而你只用了很少的注解。
+     * @HystrixCommand(threadPoolKey = "helloThreadPool")
+     * public String helloRemoteServiceCall(String firstName，String lastName)
      *
-     * 这才是 Spring Cloud 的真正优势。你作为一个开发者，从最先的云服务提供商获得身经百战的微服务能力，如
-     * Netflix 和 Consul。这些功能，如果在 Spring Cloud 之外使用，可能会很复杂，很难建立。Spring Cloud
-     * 简化了它们的使用，你要做的只不过是一些简单的 Spring Cloud 注解和配置条目而已。
+     * @HystrixCommand 注解做两件事。
+     * （1）第一件事是，在任何时候调用 helloRemoteService Call 方法，该方法都不会被直接调用，这个调用会被委派给由
+     * Hystrix 管理的线程池。如果调用时间太长（默认为 1 s），Hystrix 将介入并中断调用。这是断路器模式的实现。
+     * （2）第二件事是创建一个由 Hystrix 管理的名为 helloThreadPool 的线程池。所有对 helloRemoteServiceCall
+     * 方法的调用只会发生在此线程池中，并且将与正在进行的任何其他远程服务调用隔离。
+     *
+     *
+     * 最后要注意的是 helloRemoteServiceCall 方法中发生的事情。@EnableEurekaClient 的存在告诉 Spring Boot，
+     * 在使用 REST 服务调用时，使用修改过的 RestTemplate 类（这不是标准的 Spring RestTemplate 的工作方式）。
+     * 这个 RestTemplate 类允许用户传入自己想要调用的服务的逻辑服务 ID：
+     *
+     * ResponseEntity<String> restExchange = restTemplate.exchange
+     * ➥  (http://logical-service-id/name/{firstName}/{lastName}
+     *
+     * 在幕后，RestTemplate 类将与 Eureka 服务进行通信，并查找一个或多个 "name" 服务实例的实际位置。作为服务的
+     * 消费者，开发人员的代码永远不需要知道服务的位置。
+     *
+     * 另外，RestTemplate 类使用 Netflix 的 Ribbon 库。Ribbon 将会检索与服务有关的所有物理端点的列表。每当客户
+     * 端调用该服务时，它不必经过集中式负载均衡器就可以对客户端上不同服务实例进行轮询（round-robin）。通过消除集中
+     * 式负载均衡器并将其移动到客户端，可以消除应用程序基础设施中的其他故障点（故障的负载均衡器）。
+     *
+     * 希望此刻会给你留下深刻印象，因为只需要几个注解就可以为微服务添加大量的功能。这就是 Spring Cloud 背后真正的美。
+     * 作为开发人员，我们可以利用 Netflix 和 Consul 等知名的云计算公司的微服务功能，这些功能是久经考验的。如果在
+     * Spring Cloud 之外使用这些功能，可能会很复杂并且难以设置。Spring Cloud 简化了它们的使用，仅仅是使用一些简单
+     * 的 Spring Cloud 注解和配置条目。
      */
     public static void main(String[] args) {
 
