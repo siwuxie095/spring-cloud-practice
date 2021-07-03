@@ -35,8 +35,9 @@ public class Main {
      *
      * 注意：后续会更详细地介绍 REST，REST 背后最为核心的概念是，服务应该使用 HTTP 动词（GET、POST、PUT
      * 和 DELETE）来代表服务中的核心操作，并且使用轻量级的面向 Web 的数据序列化协议（如 JSON）来从服务请求
-     * 数据和从服务接收数据。可参考 Roy Fielding 博士关于构建基于 REST 应用程序的博士论文，它仍然是目前能
-     * 找到的关于 REST 的最好说明（https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm）。
+     * 数据和从服务接收数据。可参考 Roy Fielding 阐述如何基于 REST 构建应用的博士论文，在对 REST 概念的
+     * 阐述上，它依然是最棒的材料之一。链接如下：
+     * https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm
      *
      * 在构建基于云的应用时，微服务已经成为更常见的架构模式之一，因此 Spring 社区为开发者提供了 Spring
      * Cloud。Spring Cloud 框架使实施和部署微服务到私有云或公有云变得更加简单。Spring Cloud 在一个
