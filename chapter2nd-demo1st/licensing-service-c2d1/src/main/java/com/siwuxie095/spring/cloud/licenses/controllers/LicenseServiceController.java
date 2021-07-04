@@ -11,14 +11,18 @@ import org.springframework.web.bind.annotation.*;
  * @date 2021-05-19 22:53:35
  */
 @SuppressWarnings("all")
+// @Restcontroller 告诉 Spring Boot 这是一个基于 REST 的服务，它将自动序列化/反序列化服务请求/响应到 JSON
 @RestController
+// 在这个类中使用 /v1/organizations{organizationId}/licenses 的前缀，公开所有 HTTP 端点
 @RequestMapping(value="v1/organizations/{organizationId}/licenses")
 public class LicenseServiceController {
 
     @Autowired
     private LicenseService licenseService;
 
+    // 使用值创建一个 GET 端点 v1/organizations/{organizationId}/licenses/{licenseId}
     @RequestMapping(value="/{licenseId}",method = RequestMethod.GET)
+    // 从 URL 映射两个参数（organizationId 和 licenseId）到方法参数
     public License getLicenses(@PathVariable("organizationId") String organizationId,
                                @PathVariable("licenseId") String licenseId) {
         //return licenseService.getLicense(licenseId);

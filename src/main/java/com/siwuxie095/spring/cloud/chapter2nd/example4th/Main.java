@@ -8,28 +8,29 @@ package com.siwuxie095.spring.cloud.chapter2nd.example4th;
 public class Main {
 
     /**
-     * 开发：使用 Spring Boot 和 Java 构建一个微服务
+     * 开发人员的故事：用 Spring Boot 和 Java 构建微服务
      *
-     * 构建微服务时，从概念空间转变为实现空间需要换个角度思考。具体来说，作为一个开发者，你需要建立一个
-     * 基本的模式，每个应用程序中的微服务将被如何实现。虽然每个服务将是独一无二的，你要确保你使用一个删
-     * 除样板代码的框架，微服务的每一个部分都以一致的方法被规划。
+     * 在构建微服务时，从概念到实现，需要视角的转换。具体来说，开发人员需要建立一个实现应用程序中每个微服务的
+     * 基本模式。虽然每项服务都将是独一无二的，但这里希望确保使用的是一个移除样板代码的框架，并且微服务的每个
+     * 部分都采用相同的布局。
      *
-     * 在这里，将探讨从你的 EagleEye 域模型创建授权微服务，是开发者优先考虑的事。你的许可服务将使用
-     * Spring Boot 编写。Spring Boot 是标准 Spring 库上的抽象层，它允许开发者快速构建基于 Groovy
-     * 和 Java 的 Web 应用程序，微服务比成熟的 Spring 应用程序使用更少的配置。
+     * 在这里，将探讨开发人员从 EagleEye 域模型构建许可证微服务的优先事项。许可证服务将使用 Spring Boot
+     * 编写。Spring Boot 是标准 Spring 库之上的一个抽象层，它允许开发人员快速构建基于 Groovy 和 Java
+     * 的 Web 应用程序和微服务，比成熟的 Spring 应用程序能够节省大量的配置。
      *
-     * 以许可服务为例，你可以使用 Java 作为核心编程语言和 Apache Maven 作为构建工具。
+     * 对于许可证服务示例，这里将使用 Java 作为核心编程语言并使用 Apache Maven 作为构建工具。
      *
-     * 在接下来的几个部分中，你将要：
-     * （1）创建微服务的基本骨架和构建该应用程序的 Maven 脚本；
-     * （2）实现一个 Spring 引导类，它将为微服务启动 Spring 容器和开始剔除所有为类工作的初始化代码；
-     * （3）实现一个 Spring Boot 控制器类，用于映射端点以暴露服务的端点；
+     * 接下来，将要完成以下几项工作。
+     * （1）构建微服务的基本框架并构建应用程序的 Maven 脚本。
+     * （2）实现一个 Spring 引导类，它将启动用于微服务的 Spring 容器，并启动类的所有初始化工作。
+     * （3）实现映射端点的 Spring Boot 控制器类，以公开服务的端点。
      *
      *
      *
-     * 1、从骨架项目快速入门
+     * 1、从骨架项目开始
      *
-     * 首先，你将为授权创建一个框架项目。你可以使用以下的目录结构创建一个许可服务项目目录：
+     * 首先，要为许可证服务创建一个骨架项目。你可以从 GitHub 存储库拉取源代码，也可以创建具有以下目录结构的
+     * 许可证服务项目目录：
      * （1）licensing-service
      * （2）src/main/java/com/siwuxie095/spring/cloud/licenses
      * （3）controllers
@@ -37,142 +38,195 @@ public class Main {
      * （5）services
      * （6）resources
      *
-     * 一旦创建好目录结构，开始为项目写你的 Maven 脚本。pom.xml 文件将位于项目目录的根目录。
+     * 一旦拉取或创建了这个目录结构，就可以开始为项目编写 Maven 脚本。这就是位于项目根目录下的 pom.xml 文
+     * 件。如下代码展示了许可证服务的 Maven POM 文件。
      *
-     * 这里不会详细地讨论整个 Maven 脚本（具体可见代码），但是在开始时请注意几个关键的地方。Spring
-     * Boot 被分解成许多单独的项目。其原理是，如果你不打算在应用程序中使用不同的 Spring Boot， 就
-     * 不必 "拉下整个世界"。这也允许各种 Spring Boot 项目独立地发布新版本的代码。为了帮助简化开发
-     * 人员的工作，Spring Boot 团队已经将相关的项目集成到各种 "starter" 工具包中。
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <project xmlns=http://maven.apache.org/POM/4.0.0
+     *     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     *     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+     *     ➥  http://maven.apache.org/xsd/maven-4.0.0.xsd">
+     *   <modelVersion>4.0.0</modelVersion>
      *
-     * 这里拉下的是版本为 1.4.4 的 Spring Boot 框架。同时，你确定你还将拉下 Spring Web 和 Spring
-     * Actuator 的 starter 工具包。这两部分几乎是所有基于 Spring Boot REST 服务的核心。这两个项目
-     * 是几乎所有基于 Spring 的基于 REST 的服务的核心。你会发现，当你在服务中创建更多的功能时，这些依
-     * 赖项目的列表就变得更长了。
+     *   <groupId>com.thoughtmechanix</groupId>
+     *   <artifactId>licensing-service</artifactId>
+     *   <version>0.0.1-SNAPSHOT</version>
+     *   <packaging>jar</packaging>
      *
-     * 另外，Spring 源代码提供了 Maven 插件，简化构建和部署 Spring Boot 应用程序。所以这里告诉你的
-     * Maven 构建脚本安装最新的 Spring Boot Maven 插件，这个插件包含了一些附加的任务，简化了 Maven
-     * 和 Spring Boot 之间的操作（如 spring-boot:run）。
+     *   <name>EagleEye Licensing Service</name>
+     *   <description>Licensing Service</description>
      *
-     * PS：这里还包括了用于构建和部署应用程序作为 Docker 容器的 Docker 文件，以及 Maven 脚本中的
+     *   <parent>
+     *     <groupId>org.springframework.boot</groupId>
+     *     <artifactId>spring-boot-starter-parent</artifactId>    ⇽---  告诉 Maven 包含 Spring Boot 起步工具包依赖项
+     *     <version>1.4.4.RELEASE</version>
+     *     <relativePath/>
+     *   </parent>
+     *   <dependencies>
+     *     <dependency>
+     *       <groupId>org.springframework.boot</groupId>
+     *       <artifactId>spring-boot-starter-web</artifactId>    ⇽---  告诉 Maven 包含 Spring Boot Web 依赖项
+     *     </dependency>
+     *     <dependency>
+     *       <groupId>org.springframework.boot</groupId>
+     *       <artifactId>spring-boot-starter-actuator</artifactId>    ⇽---  告诉 Maven 包含 Spring Actuator 依赖项
+     *     </dependency>
+     * </dependencies>
+     * <!--
+     *      注意：某些构建属性和 Docker 构建插件已从此 pom 中的 pom.xml 中排除掉了（GitHub 存储库的
+     *      源代码中并没有移除），因为它们与这里的讨论无关。
+     *     -->
+     *
+     * <build>
+     *   <plugins>
+     *      <plugin>
+     *        <groupId>org.springframework.boot</groupId>
+     *        <artifactId>spring-boot-maven-plugin</artifactId>    ⇽---  告诉 Maven 包含 Spring 特定的 Maven 插件，
+     *                                                                   用于构建和部署 Spring Boot 应用程序
+     *      </plugin>
+     *     </plugins>
+     *   </build>
+     * </project>
+     *
+     * 这里不会详细讨论整个脚本，但是在开始的时候要注意几个关键的地方。Spring Boot 被分解成许多个独立的项目。
+     * 其理念是，如果不需要在应用程序中使用 Spring Boot 的各个部分，那么就不应该 "拉取整个世界"。这也使不
+     * 同的 Spring Boot 项目能够独立地发布新版本的代码。为了简化开发人员的开发工作，Spring Boot 团队将相
+     * 关的依赖项目收集到各种 "起步"（starter）工具包中。Maven POM 的第一部分告诉 Maven 需要拉取 Spring
+     * Boot 框架的 1.4.4 版本。
+     *
+     * Maven 文件的第二部分和第三部分确定了要拉取 Spring Web 和 Spring Actuator 起步工具包。这两个项目
+     * 几乎是所有基于 Spring Boot REST 服务的核心。你会发现，服务中构建功能越多，这些依赖项目的列表就会变
+     * 得越长。
+     *
+     * 此外，Spring Source 还提供了 Maven 插件，可简化 Spring Boot 应用程序的构建和部署。第四部分告诉
+     * Maven 构建脚本安装最新的 Spring Boot Maven 插件。此插件包含许多附加任务（如spring-boot:run ），
+     * 可以简化 Maven 和 Spring Boot 之间的交互。
+     *
+     * 最后，你将看到一条注释，说明 Maven 文件的哪些部分已被删除。为了简化，这里没有在上述代码中包含 Spotify
      * Docker 插件。
      *
      *
      *
-     * 2、编写引导类,启动你的 Spring Boot 应用
+     * 2、引导 Spring Boot 应用程序：编写引导类
      *
-     * 你癿目标是获得一个简单的微服务，它在 Spring Boot 运行良好，并且在其上可以迭代来发布功能。为此，
-     * 你需要在你的授权微服务项目中创建两个类：
-     * （1）一个 Spring 引导类，将用于 Spring Boot 启动并初始化应用程序；
-     * （2）一个 Spring 控制器类，将暴露可以在微服务调用的 HTTP 端点；
+     * 这里的目标是在 Spring Boot 中运行一个简单的微服务，然后重复这个步骤以提供功能。为此，需要在许可证服
+     * 务微服务中创建以下两个类。
+     * （1）一个 Spring 引导类，可被 Spring Boot 用于启动和初始化应用程序。
+     * （2）一个 Spring 控制器类，用来公开可以被微服务调用的 HTTP 端点。
      *
-     * 你很快就会看到，Spring Boot 使用注解来简化服务的设置和配置。这个引导类位于 src/main/java/com
-     * /siwuxie095/spring/cloud/licenses/Application.java 文件。
+     * Spring Boot 使用注解来简化设置和配置服务。在查看引导类时，这一点就变得显然易见。如下所示。
      *
-     * 在 Application 类中，第一件事是注意其中使用的 @SpringBootApplication 注解。Spring Boot
-     * 使用这个注解告诉 Spring 容器，这个类是在 Spring 中使用的 Bean 定义的源头。在 Spring Boot
-     * 应用程序中，您可以通过以下方式定义 Spring Bean：
-     * （1）在 Java 中使用 @Component、@Service 或 @Repository 注解。
-     * （2）用 @Configuration 注解一个类，然后为每一个你想用一个 @Bean 注解创建的 Spring Bean 定义
-     * 一个构造函数方法。
+     * // 告诉 Spring Boot 框架，这是项目的引导类
+     * @SpringBootApplication
+     * public class Application {
      *
-     * 正如所论述的，@SpringBootApplication 注解标记应用程序的类作为一个配置类，然后开始自动扫描其它
-     * Spring Bean 在 Java 类路径的所有类。
-     *
-     * 在 Application 类中，第一件事是要注意应用程序类的 main() 方法。在 main() 方法，
-     * SpringApplication.run(Application.class, args)，调用启动 Spring 容器并返回
-     * 一个 Spring ApplicationContext 对象。
-     *
-     * 最简单的事情是记住 @SpringBootApplication 注解和相应的应用程序类，它是整个微服务的引导类。服
-     * 务的核心初始化逻辑应该放在这个类中。
-     *
-     *
-     *
-     * 3、创建微服务的访问入口：Spring Boot 控制器
-     *
-     * 现在你已经获得了构建脚本，并实现了一个简单的 Spring Boot 引导类，你可以开始编写你的第一个代码，
-     * 它将做一些事情。此代码将是控制器类。在一个 Spring Boot 应用， 一个控制器类暴露服务的端点，从
-     * 一个传入的 HTTP 请求映射到一个将处理请求数据的 Java 方法。
-     *
-     *
-     * PS：尝试一下 REST
-     *
-     * 这里所有的微服务采用 REST 方法来构建你的微服务。对 REST 的深入讨论超出了这里的范围，但为了能够
-     * 满足你的要求，你所构建的所有服务都具有以下特性：
-     * （1）使用 HTTP 作为服务的调用协议：该服务将通过 HTTP 端点暴露，并将使用 HTTP 协议将数据在服务
-     * 间来回传送。
-     * （2）将服务的行为映射到标准 HTTP 动词：REST 强调服务将其行为映射到 HTTP 动词（POST、GET、PUT
-     * 和 DELETE）中。这些动词在大多数服务中映射到增删改查功能。
-     * （3）将 JSON 作为服务间传递的所有数据的序列化格式：这不是一个基于 REST 的微服务癿硬性原则，但
-     * JSON 已经成为数据序列化的通用语，数据将通过微服务被提交和返回。可以使用 XML，但许多基于 REST
-     * 的应用程序大量使用 JavaScript 和 JSON（JavaScript Object Notation）。JSON 是序列化和反序
-     * 列化基于 JavaScript 的 Web 前端和服务消费的数据的原生格式。
-     * （4）使用 HTTP 状态代码来传递服务调用的状态：HTTP 协议开发了一组丰富的状态代码来表明服务的成败。
-     * 基于 REST 的服务利用这些 HTTP 状态码和其他基于网络的基础设施，如反向代理服务器和缓存，可以相对
-     * 容易地与你的微服务集成。
-     *
-     * HTTP 是 Web 的语言，使用 HTTP 作为构建服务的哲学框架是构建云服务的关键。
-     *
-     * 你的第一个控制器类位于 src/main/java/com/siwuxie095/spring/cloud/licenses/controllers
-     * /LicenseServiceController.java。该类将暴露四个 HTTP 端点，这些端点将映射到动词 POST、GET、
-     * PUT 和 DELETE。
-     *
-     * 下面浏觅一下控制器类，看看 Spring Boot 是如何提供一组注解，这些注解可以不断努力将服务端点暴露
-     * 到最低限度，并允许你集中精力构建服务的业务逻辑。这里将从基本控制器类定义开始，而不使用任何类方法。
-     *
-     * @RestController
-     * @RequestMapping(value="v1/organizations/{organizationId}/licenses")
-     * public class LicenseServiceController {
+     *     public static void main(String[] args) {
+     *         // 调用以启动整个 Spring Boot 服务
+     *         SpringApplication.run(Application.class, args);
+     *     }
      *
      * }
      *
-     * 这里将从 @RestController 注解开始探索。@RestController 是一个类级的 Java 注解，它告诉
-     * Spring 容器，这个 Java 类将被用于一个基于 REST 的服务。这个注解自动处理服务数据的序列化为
-     * JSON 或 XML（默认情况下，@RestController 类将序列化返回的数据为 JSON）。不同于传统的
-     * Spring @Controller 注解，@RestController 注解不需要你作为开发者从你的控制器类返回一个
-     * ResponseBody 类。@RestController 注解包括 @ResponseBody 注解，它会处理所有的序列化。
+     * 在这段代码中需要注意的第一件事是 @SpringBootApplication 的用法。Spring Boot 使用这个注解来告诉
+     * Spring 容器，这个类是在 Spring 中使用的 bean 定义的源。在 Spring Boot 应用程序中，可以通过以下
+     * 方法定义 Spring Bean。
+     * （1）用 @Component 、@Service 或 @Repository 注解标签来标注一个 Java 类。
+     * （2）用 @Configuration 注解标签来标注一个类，然后为每个想要构建的 Spring Bean 定义一个构造器方
+     * 法并为方法添加上 @Bean 标签。
+     *
+     * 在幕后，@SpringBootApplication 注解将 Application 类标记为配置类，然后开始自动扫描 Java 类路径
+     * 上所有的类以形成其他的 Spring Bean。
+     *
+     * 第二件需要注意的事是 Application 类的 main() 方法。在 main() 方法中，Spring Application.run
+     * (Application.class, args) 调用启动了 Spring 容器，然后返回了一个 Spring ApplicationContext
+     * 对象（这里没有使用 ApplicationContext 做任何事情，因此它没有在代码中展示）。
+     *
+     * 关于 @SpringBootApplication 注解及其对应的 Application 类，最容易记住的是，它是整个微服务的引导
+     * 类。服务的核心初始化逻辑应该放在这个类中。
      *
      *
-     * PS：为什么微服务使用 JSON？
      *
-     * 多协议可以用来发送基于 HTTP 的微服务来回之间的数据。由于几个原因，JSON 已经成为事实上的标准。
+     * 3、构建微服务的入口：Spring Boot 控制器
      *
-     * 首先，与其他协议（如基于 XML 的 SOAP【简单对象访问协议】）相比，它非常轻量级，你可以在没有大量
-     * 文本开销的情况下传送数据。
-     *
-     * 其次，它很容易被人阅读和消费。这是一个选择序列化协议被低估的优势。当出现问题时，开发人员查看
-     * JSON 块并快速、直观地处理其中的内容是至关重要的。协议的简单性使这项工作非常简单。
-     *
-     * 最后，JSON 是 JavaScript 中使用的默认序列化协议。由于 JavaScript 的关注度急剧上升，作为
-     * 一种编程语言和单页面的互联网应用的关注度同样急剧上升（SPIA），它们在很大程度上依赖于
-     * JavaScript，JSON 已经成为构建基于 REST 应用的一种天然契合，因为前端 Web 客户端使用它调用
-     * 服务。
-     *
-     * 其他机制和协议比 JSON 更有效地用于服务间通信。Apache 的 Thrift 框架允许你使用二进制协议构
-     * 建能够互相通信的多语言服务。Apache 的 Avro 协议是一个数据序列化协议，它将客户端和服务器之
-     * 间的来回传递的数据转换成二进制格式。
-     *
-     * （1）Thrift：https://thrift.apache.org/
-     * （2）Avro：https://avro.apache.org/
-     *
-     * 如果你需要最小化通过电缆发送的数据的大小，这里建议你看看这些协议。但在微服务中直接使用 JSON
-     * 能更有效的工作，不会干预另一层服务消费者和服务客户端之间的通信调试。
+     * 现在已经有了构建脚本，并实现了一个简单的 Spring Boot 引导类，接下来就可以开始编写第一个代码来做一些
+     * 事情。这个代码就是控制器类。在 Spring Boot 应用程序中，控制器类公开了服务端点，并将数据从传入的 HTTP
+     * 请求映射到将处理该请求的 Java 方法。
      *
      *
-     * 这里的第二个注解是 @RequestMapping。你可以使用 @RequestMapping 作为类级或者方法级的注解。
-     * @RequestMapping 注解用来告诉 Spring 容器服务的 HTTP 端点将向外界暴露。当你使用类级的
-     * @RequestMapping 注解，你将建立通过控制器暴露的所有其它端点的根 URL。
+     * PS：遵循 REST
      *
-     * @RequestMapping(value="v1/organizations/{organizationId}/licenses")
+     * 这里的所有微服务都遵循 REST 方法来构建。对 REST 的深入讨论超出了这里的范围，但对于这里，构建的所有服
+     * 务都将具有以下特点。
+     * （1）使用 HTTP 作为服务的调用协议：服务将通过 HTTP 端点公开，并使用 HTTP 协议传输进出服务的数据。
+     * （2）将服务的行为映射到标准 HTTP 动词：REST 强调将服务的行为映射到 POST、GET、PUT 和 DELETE
+     * 这样的 HTTP 动词上。这些动词映射到大多数服务中的 CRUD 功能。
+     * （3）使用 JSON 作为进出服务的所有数据的序列化格式：对基于 REST 的微服务来说，这不是一个硬性原则，但
+     * 是 JSON 已经成为通过微服务提交和返回数据的通用语言。当然也可以使用 XML，但是许多基于 REST 的应用程
+     * 序大量使用 JavaScript 和 JSON。JSON 是基于 JavaScript 的 Web 前端和服务对数据进行序列化和反序列
+     * 化的原生格式。
+     * （4）使用 HTTP 状态码来传达服务调用的状态：HTTP 协议开发了一组丰富的状态码，以指示服务的成功或失败。
+     * 基于 REST 的服务利用这些 HTTP 状态码和其他基于 Web 的基础设施，如反向代理和缓存，可以相对容易地与
+     * 微服务集成。
      *
-     * 这里使用 value 属性创建控制器类中暴露的所有端点的根 URL。在这个控制器中暴露的所有服务端点都
-     * 将以 /v1/organizations/{organizationId}/licenses 开始，作为其端点的根。
-     * {organizationId} 是一个占位符，表示你期待的 URL 在每次调用传递一个 organizationId 参数。
-     * URL 中 organizationId 的使用，允许你在不同客户之间区分出谁会使用你的服务。
+     * HTTP 是 Web 的语言，使用 HTTP 作为构建服务的哲学框架是构建云服务的关键。
      *
-     * 现在，你将向控制器添加第一个方法。此方法将实现 REST 调用中使用的 GET 谓词并返回单个许可证类
-     * 实例，如下所示（讨论的目的是实例化一个称为 License 的 Java 类）。
      *
+     * 第一个控制器类是 LicenseSerriceController，这个类将公开 4 个 HTTP 端点，这些端点将映射到 POST、
+     * GET、PUT 和 DELETE 动词。
+     *
+     * 下面看一下控制器类，看看 Spring Boot 如何提供一组注解，以保证花最少的努力公开服务端点，使开发人员能
+     * 够集中精力构建服务的业务逻辑。这里将从没有任何类方法的基本控制器类定义开始。如下代码展示了为许可证服务
+     * 构建的控制器类。
+     *
+     * // @Restcontroller 告诉 Spring Boot 这是一个基于 REST 的服务，它将自动序列化/反序列化服务请求/响应到 JSON
+     * @RestController
+     * // 在这个类中使用 /v1/organizations{organizationId}/licenses 的前缀，公开所有 HTTP 端点
+     * @RequestMapping(value="/v1/organizations/{organizationId}/licenses")
+     * public class LicenseServiceController {
+     *   // 为了简洁，省略了该类的内容
+     * }
+     *
+     * 这里通过查看 @RestController 注解来开始探索。@RestController 是一个类级 Java 注解，它告诉 Spring
+     * 容器这个 Java 类将用于基于 REST 的服务。此注解自动处理以 JSON 或 XML 方式传递到服务中的数据的序列化
+     * （在默认情况下，@RestController 类将返回的数据序列化为 JSON）。与传统的 Spring @Controller 注解
+     * 不同，@RestController 注解并不需要开发者从控制器类返回 ResponseBody 类。这一切都由 @RestController
+     * 注解进行处理，它包含了 @ResponseBody 注解。
+     *
+     *
+     * PS：为什么是 JSON
+     *
+     * 在基于 HTTP 的微服务之间发送数据时，其实有多种可选的协议。由于以下几个原因，JSON 已经成为事实上的标准。
+     * （1）首先，与其他协议（如基于 XML 的 SOAP（Simple Object Access Protocol，简单对象访问协议））相
+     * 比，它非常轻量级，可以在没有太多文本开销的情况下传递数据。
+     * （2）其次，JSON 易于人们阅读和消费。这在选择序列化协议时往往被低估。当出现问题时，开发人员可以快速查看
+     * 一大堆 JSON，直观地处理其中的内容。JSON 协议的简单性让这件事非常容易做到。
+     * （3）最后，JSON 是 JavaScript 使用的默认序列化协议。由于 JavaScript 作为编程语言的急剧增长以及依赖
+     * 于 JavaScript 的单页互联网应用程序（Single Page Internet Application，SPIA）的同样快速增长，JSON
+     * 已经天然适用于构建基于 REST 的应用程序，因为前端 Web 客户端用它来调用服务。
+     *
+     * 其他机制和协议能够比 JSON 更有效地在服务之间进行通信。Apache Thrift 框架允许构建使用二进制协议相互通
+     * 信的多语言服务。Apache Avro 协议是一种数据序列化协议，可在客户端和服务器调用之间将数据转换为二进制格式。
+     *
+     * 如果你需要最小化通过线路发送的数据的大小，建议查看这些协议。但是根据经验，在微服务中使用直接的 JSON 就
+     * 可以有效地工作，并且不会在服务消费者和服务客户端间插入另一层通信来进行调试。
+     *
+     *
+     * 这段代码中展示的第二个注解是 @RequestMapping。可以使用 @RequestMapping 作为类级注解和方法级注解。
+     * @RequestMapping 注解用于告诉 Spring 容器该服务将要公开的 HTTP 端点。使用类级的 @RequestMapping
+     * 注解时，将为该控制器公开的所有其他端点建立 URL 的根。
+     *
+     * 在这里，@RequestMapping(value="/v1/organizations/{organizationId}/licenses") 使用 value
+     * 属性为控制器类中公开的所有端点建立 URL 的根。在此控制器中公开的所有服务端点将以 /v1/organizations
+     * /{organizationId}/licenses 作为其端点的根。{organizationId} 是一个占位符，表明如何使用在每个
+     * 调用中传递的 organizationId 来参数化 URL。在 URL 中使用 organizationId 可以区分使用服务的不同
+     * 客户。
+     *
+     * 现在将添加控制器的第一个方法。这一方法将实现 REST 调用中的 GET 动词，并返回单个 License 类实例，
+     * 如下所示（为了便于讨论，将实例化一个名为 License 的 Java 类）。
+     *
+     *     // 使用值创建一个 GET 端点 v1/organizations/{organizationId}/licenses/{licenseId}
      *     @RequestMapping(value="/{licenseId}",method = RequestMethod.GET)
+     *     // 从 URL 映射两个参数（organizationId 和 licenseId）到方法参数
      *     public License getLicenses(@PathVariable("organizationId") String organizationId,
      *                                @PathVariable("licenseId") String licenseId) {
      *         return new License()
@@ -183,51 +237,51 @@ public class Main {
      *                 .withOrganizationId("TestOrg");
      *     }
      *
-     * 这里做的第一件事是：使用方法级的 @RequestMapping 来注解 getlicenses() 方法，并有两个参数：
-     * value 和 method。注解的第一个参数 value，你将在顶级类中创建指定的根级注解来匹配所有传入的
-     * HTTP 请求到端点为 /v1/organizations/{organizationId}/licences/{licensedId} 的控制器。
-     * 注解的第二个参数 method，指定该方法将匹配的 HTTP 谓词。这里通过 RequestMethod.GET 枚举匹
-     * 配到 GET 方法。
+     * 这段代码中完成的第一件事是，使用方法级的 @RequestMapping 注解来标记 getLicenses() 方法，将两个
+     * 参数传递给注解，即 value 和 method。通过方法级的 @RequestMapping 注解，再结合类顶部指定的根级
+     * 注解，将所有传入该控制器的 HTTP 请求与端点 /v1/organizations/{organizationId}/licences
+     * /{licensedId} 匹配起来。该注解的第二个参数 method 指定该方法将匹配的 HTTP 动词。在这里，以
+     * RequestMethod.GET 枚举的形式匹配 GET 方法。
      *
-     * 这里作的第二件事是：在 getLicenses() 方法体中使用 @PathVariable 注解参数。@PathVariable
-     * 注解被用于映射传入 URL 的参数值（如用 {parameterName} 语法）到你的方法的参数。这里将从 URL
-     * 映射两个参数，organizationId 和 licenseId，到方法里两个参数级变量：
-     * （1）@PathVariable("organizationId") String organizationId
-     * （2）@PathVariable("licenseId") String licenseId
+     * 这段代码中需要注意的第二件事是 getLicenses() 方法的参数体中使用了 @PathVariable 注解。这个注解
+     * 用于将在传入的 URL 中传递的参数值（由 {parameterName} 语法表示）映射为方法的参数。在这里，将两个
+     * 参数 organizationId 和 licenseId 映射到方法中的两个参数级变量：
+     *
+     * @PathVariable("organizationId") String organizationId,
+     * @PathVariable("licenseId") String licenseId)
      *
      *
-     * PS：端点的名称问题
+     * PS：端点命名问题
      *
-     * 在你沿着编写微服务的道路走得太远之前，需要确保你（在你的组织潜在的其他团队）为通过你的服务暴露的
-     * 端点建立标准。微服务的 URL（统一资源定位器）应该能够清楚的表达服务的目的，服务资源管理和在服务之
-     * 间存在的资源管理关系。下面的准则对于命名服务端点很有用：
-     * （1）使用明确的 URL 名称建立服务所代表的资源：定义 URL 的规范格式将使你的 API 更直观，更容易
-     * 使用。在命名约定中保持一致。
-     * （2）使用 URL 建立资源之间的关系：通常在你的微服务资源之间有父子关系，哪里的孩子不会在父上下文
-     * 以外存在（因此你不可能有一个子微服务）。使用 URL 来表示这些关系。但如果你发现你的 URL 往往是太
-     * 长和嵌套，那么你的微服务可能试图做太多的事情。
-     * （3）为 URL 建立早期版本控制方案：URL 及其相应端点表示服务所有者和服务消费者之间的契约。一个
-     * 常见的模式是在所有端点之前使用一个版本号。及早建立你的版本控制计划并坚持下去。在已经有好几个用
-     * 户使用它们之后，为 URL 升级版本是非常困难的。
+     * 在编写微服务之前，要确保（以及组织中的其他可能的团队）为服务公开的端点建立标准。应该使用微服务的 URL
+     * （Uniform Resource Locator，统一资源定位器）来明确传达服务的意图、服务管理的资源以及服务内管理的
+     * 资源之间存在的关系。以下指导方针有助于命名服务端点。
+     * （1）使用明确的 URL 名称来确立服务所代表的资源：使用规范的格式定义 URL 将有助于 API 更直观，更易于
+     * 使用。要在命名约定中保持一致。
+     * （2）使用 URL 来确立资源之间的关系：通常，在微服务中会存在一种父子关系，在这些资源中，子项不会存在于
+     * 父项的上下文之外（因此可能没有针对该子项的单独的微服务）。使用 URL 来表达这些关系。但是，如果发现 URL
+     * 嵌套过长，可能意味着微服务尝试做的事情太多了。
+     * （3）尽早建立 URL 的版本控制方案：URL 及其对应的端点代表了服务的所有者和服务的消费者之间的契约。一
+     * 种常见的模式是使用版本号作为前缀添加到所有端点上。尽早建立版本控制方案，并坚持下去。在几个消费者使用
+     * 它们之后，对 URL 进行版本更新是非常困难的。
      *
-     * 此时，你可以将其作为一个服务进行调用。从一个命令行窗口，执行以下的 Maven 命令：
+     *
+     * 现在，可以将刚刚创建的东西称为服务。在命令行窗口中，转到代码的项目目录，然后执行以下 Maven 命令：
      *
      * mvn spring-boot:run
      *
-     * 当你键入回车键时，你应该看到 Spring Boot 启动一个嵌入式 Tomcat 服务器，并开始监听端口 8080。
+     * 一旦按下回车键，应该会看到 Spring Boot 启动一个嵌入式 Tomcat 服务器，并开始监听 8080 端口。
      *
-     * 一旦服务启动，就可以直接命中暴露的端点。因为第一个方法以 GET 调用暴露，所以可以使用许多种方法来
-     * 调用服务。这里的首选方法是使用像 POSTMAN 这样基于 Chrome 的工具或 CURL 来调用服务。
+     * 服务启动后就可以直接访问公开的端点了。因为公开的第一个方法是 GET 调用，可以使用多种方法来调用这一服务。
+     * 这里的首选方法是使用基于 Chrome 的工具，如 POSTMAN 或 CURL 来调用该服务。
      *
-     * 如下是一个 GET 方式的端点：
+     * 可以试着在 http://localhost:8080/v1/organizations/e254f8c-c442-4ebe-a82a-e2fc1d1ff78a
+     * /licenses/f3831f8c-c338-4ebe-a82a-e2fc1d1ff78a 端点上完成的一个 GET 请求。
      *
-     * http://localhost:8080/v1/organizations/e254f8c-c442-4ebe-a82a-e2fc1d1ff78a
-     * /licenses/f3831f8c-c338-4ebe-a82a-e2fc1d1ff78a
+     * PS：当调用 GET 端点时，将返回包含许可证数据当 JSON 净荷。
      *
-     * 当 GET 端点被调用时，返回包含许可数据的 JSON 有效载荷。
-     *
-     * 此时，你有一个运行的服务框架。但是从开发的角度来看，这个服务并不完整。一个好的微服务设计并不回避
-     * 将服务分离为定义明确的业务逻辑和数据访问层。后续将继续迭代这个服务并深入研究如何构造它。
+     * 现在已经有了一个服务的运行骨架。但从开发的角度来看，这服务还不完整。良好的微服务设计不可避免地将服务分
+     * 成定义明确的业务逻辑和数据访问层。后续将继续对此服务进行迭代，并进一步深入了解如何构建该服务。
      */
     public static void main(String[] args) {
 
