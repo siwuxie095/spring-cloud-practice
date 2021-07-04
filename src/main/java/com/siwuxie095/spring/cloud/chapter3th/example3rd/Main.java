@@ -8,78 +8,123 @@ package com.siwuxie095.spring.cloud.chapter3th.example3rd;
 public class Main {
 
     /**
-     * 建立 Spring Cloud Config Server
+     * 构建 Spring Cloud 配置服务器
      *
-     * Spring Cloud 配置服务器是构建在 Spring Boot 之上的基于 REST 的应用程序。它不是一个独立的服务器。
-     * 相反，你可以选择将其嵌入到现有的 Spring Boot 应用程序中，或者使用服务器启动一个新的 Spring Boot
-     * 项目的时候嵌入它。
+     * Spring Cloud 配置服务器是基于 REST 的应用程序，它建立在 Spring Boot 之上。Spring Cloud 配置服务器
+     * 不是独立服务器，相反，开发人员可以选择将它嵌入现有的 Spring Boot 应用程序中，也可以在嵌入它的服务器中
+     * 启动新的 Spring Boot 项目。
      *
-     * 你需要做的第一件事是建立一个新的项目，目录称为 config-server。在 config-server 目录你会创建一个
-     * 新的 Maven 文件，它将用来拉下启动你的 Spring Cloud 配置服务器需要的 JARs。
+     * 首先需要做的是建立一个名为 config-server 的新项目目录。在 config-server 目录中创建一个新的 Maven
+     * 文件，该文件将用于拉取启动 Spring Cloud 配置服务器所需的 JAR 文件。如下代码列出的是关键部分，而不是
+     * 整个 Maven 文件。
      *
-     * Spring Cloud 是大量独立项目的集合，它们都随自己的版本移动。这个父 BOM 包含了云项目中使用的所有第
-     * 三方库和依赖项，以及组成该版本的各个项目的版本号。在这个例子中，你使用版本 Camden.SR5 的 Spring
-     * Cloud。利用 BOM 的定义，你能保证在 Spring Cloud 项目中使用兼容版本的子项目。它还意味着你不必为
-     * 子依赖项声明版本号。
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <project xmlns="http://maven.apache.org/POM/4.0.0"
+     *     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     *     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://
+     *     ➥  maven.apache.org/xsd/maven-4.0.0.xsd">
+     *   <modelVersion>4.0.0</modelVersion>
      *
-     * 这里的示例涉及声明你将在服务中使用的特定 Spring Cloud 依赖项。如下：
+     *   <groupId>com.thoughtmechanix</groupId>
+     *   <artifactId>configurationserver</artifactId>
+     *   <version>0.0.1-SNAPSHOT</version>
+     *   <packaging>jar</packaging>
      *
-     *         <dependency>
-     *             <groupId>org.springframework.cloud</groupId>
-     *             <artifactId>spring-cloud-starter-config</artifactId>
-     *         </dependency>
+     *   <name>Config Server</name>
+     *   <description>Config Server demo project</description>
      *
-     *         <dependency>
-     *             <groupId>org.springframework.cloud</groupId>
-     *             <artifactId>spring-cloud-config-server</artifactId>
-     *         </dependency>
+     *   <parent>
+     *     <groupId>org.springframework.boot</groupId>
+     *     <artifactId>spring-boot-starter-parent</artifactId>
+     *     <version>1.4.4.RELEASE</version>    ⇽---  将要使用的 Spring Boot 版本
+     *   </parent>
+     *   <dependencyManagement>
+     *     <dependencies>
+     *       <dependency>
+     *         <groupId>org.springframework.cloud</groupId>
+     *         <artifactId>spring-cloud-dependencies</artifactId>
+     *         <version>Camden.SR5</version>    ⇽---  将要使用的 Spring Cloud 版本
+     *         <type>pom</type>
+     *         <scope>import</scope>
+     *       </dependency>
+     *     </dependencies>
+     *   </dependencyManagement>
      *
-     * 第一个依赖项是所有 Spring Cloud 项目使用的 spring-cloud-starter-config 依赖项。第二个依赖项是
-     * spring-cloud-config-server 启动项目。它包含了 spring-cloud-config-server 的核心库。
+     *   <properties>
+     *     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+     *     <start-class>com.thoughtmechanix.confsvr.
+     *     ➥  ConfigServerApplication</start-class>    ⇽---  配置服务器将要使用的引导类
+     *     <java.version>1.8</java.version>
+     *     <docker.image.name>johncarnell/tmx-confsvr</docker.image.name>
+     *     <docker.image.tag>chapter3</docker.image.tag>
+     *   </properties>
+     *
+     *   <dependencies>
+     *     <dependency>
+     *       <groupId>org.springframework.cloud</groupId>    ⇽---  在这个特定服务中将要使用的 Spring Cloud 项目
+     *       <artifactId>spring-cloud-starter-config</artifactId>
+     *     </dependency>
+     *
+     *     <dependency>
+     *       <groupId>org.springframework.cloud</groupId>    ⇽---在这个特定服务中将要使用的 Spring Cloud 项目
+     *       <artifactId>spring-cloud-config-server</artifactId>
+     *     </dependency>
+     *   </dependencies>
+     *
+     * <!-- 未显示Docker构建配置 -->
+     * </project>
+     *
+     * 在这段代码所示的 Maven 文件中，首先声明了要用于微服务的 Spring Boot 版本（1.4.4 版本）。下一个重要的
+     * Maven 定义部分是将要使用的 Spring Cloud Config 父物料清单（Bill of Materials，BOM）。
+     *
+     * Spring Cloud 是一个大量独立项目的集合，这些项目全部遵循自身的发行版本而更新。此父 BOM 包含云项目中使用
+     * 的所有第三方库和依赖项以及构成该版本的各个项目的版本号。在这个例子中，使用 Spring Cloud 的 Camden.SR5
+     * 版本。通过使用 BOM 定义，可以保证在 Spring Cloud 中使用子项目的兼容版本。这也意味着不必为子依赖项声明
+     * 版本号。这段代码的剩余部分负责声明将在服务中使用的特定 Spring Cloud 依赖项。第一个依赖项是所有 Spring
+     * Cloud 项目使用的 spring-cloud-starter-config。第二个依赖项是 spring-cloud-config-server 起步项
+     * 目，它包含了 spring-cloud-config-server 的核心库。
      *
      *
-     * PS：来吧，坐列车，发布列车
+     * PS：来吧，坐上发行版系列的列车
      *
-     * Spring Cloud 使用非传统机制标记 Maven 项目。Spring Cloud 是一个独立的子项目集。Spring Cloud
-     * 团队通过所谓的 "发布列车" 发布他们的版本。所有的子项目组成 Spring Cloud，它们使用 Maven 文件
-     * （BOM）打包并作为一个整体发布。Spring Cloud 团队已经利用伦敦地铁站的名字作为他们发布的名称，每个
-     * 增量主要发布给伦敦地铁站，有下一个最高字母时停止。已经有三个版本：Angel、Brixton 和 Camden。
-     * Camden 是迄今为止最新的版本，但在子项目的分支内仍有多个候选版本。
+     * Spring Cloud 使用非传统机制来标记 Maven 项目。Spring Cloud 是独立子项目的集合。Spring Cloud 团队
+     * 通过其称为 "发行版系列"（release train）的方式进行版本发布。组成 Spring Cloud 的所有子项目都包含在
+     * 一个 Maven 物料清单（BOM）中，并作为一个整体进行发布。Spring Cloud 团队一直使用伦敦地铁站的名称作为
+     * 他们发行版本的名称，每个递增的主要版本都按字母表从小到大的顺序赋予一个伦敦地铁站的站名。目前已有三个版本，
+     * 即 Angel、Brixton 和 Camden。Camden 是迄今为止最新的发行版，但是它的子项目中仍然有多个候选版本分支。
      *
-     * 需要注意的一点是，Spring Boot 是独立于 Spring Cloud 发布列车发布的。因此，不同版本的 Spring
-     * Boot 与 Spring Cloud 的不同版本是不兼容的。你可以看到 Spring Boot 和 Spring Cloud 之间的
-     * 版本依赖关系，以及包含在发布培训项目的不同子项目版本，请参照 Spring Cloud 网站：
-     * https://spring.io/projects/spring-cloud
+     * 需要注意的是，Spring Boot 是独立于 Spring Cloud 发行版系列发布的。因此，Spring Boot 的不同版本可能
+     * 与 Spring Cloud 的不同版本不兼容。参考 Spring Cloud 网站，可以看到 Spring Boot 和 Spring Cloud
+     * 之间的版本依赖项，以及发行版系列中包含的不同子项目版本。
      *
      *
-     * 你仍然需要设置一个文件以获取核心配置服务器并运行。这个文件是 application.yml， 它在 config-
-     * service/src/main/resources 目录。application.yml 文件会告诉 Spring Cloud 配置服务所监听的
-     * 端口和定位的后端，后端将提供配置数据。
+     * 这里仍然需要再多创建一个文件来让核心配置服务器正常运行。这个文件是位于 resources 目录中的 application
+     * .yml 文件。application.yml 文件告诉 Spring Cloud 配置服务要侦听哪个端口以及在哪里可以找到提供配置
+     * 数据的后端。
      *
-     * 你几乎准备好启动 Spring Cloud 配置服务了。你需要将服务器指向保存配置数据的后端存储库。在这里，你
-     * 将使用构建的许可服务作为如何使用 Spring Cloud Config 的一个示例。为了使事情简单，你将为三个环境
-     * 设置应用程序配置数据：本地运行服务时的默认环境、开发环境和生产环境。
+     * 马上就能启动 Spring Cloud 配置服务了。现在，需要将服务器指向保存配置数据的后端存储库。这里将要使用之前
+     * 构建的许可证服务作为使用 Spring Cloud Config 的示例。简单起见，这里将为以下三个环境创建配置数据：在本
+     * 地运行服务时的默认环境、开发环境以及生产环境。
      *
-     * 在 Spring Cloud 配置中，一切都脱离层次结构。应用程序配置由应用程序的名称来表示，然后为每个环境设
-     * 置一个属性文件，以便为其配置信息。在每个环境中，你将设置两个配置属性：
-     * （1）将由你的许可服务直接使用的示例属性。
-     * （2）用于存储许可服务数据的 Postgres 数据库的数据库配置。
+     * 在 Spring Cloud 配置中，一切都是按照层次结构进行的。应用程序配置由应用程序的名称表示。这里为需要拥有配
+     * 置信息的每个环境提供一个属性文件。在这些环境中，将创建两个配置属性：
+     * （1）由许可证服务直接使用的示例属性；
+     * （2）用于存储许可证服务数据的 Postgres 数据库的配置。
      *
-     * Spring Cloud 配置将特定环境的属性暴露为基于 HTTP 的端点。有一点要注意的是，当你建立你的配置服务，
-     * 这将是另一个运行在你的环境中的微服务。一旦设置完毕，服务的内容就可以通过基于 HTTP 的 REST 端点访
-     * 问。即 Spring Cloud 配置服务器会作为微服务运行和暴露。
+     * 需要注意的是，在构建配置服务时，它将成为在环境中运行的另一个微服务。一旦建立配置服务，服务的内容就可以通
+     * 过基于 HTTP 的 REST 端点进行访问。
      *
-     * 应用程序配置文件命名约定为 appName-env.yml。这里的环境名称直接转换为将访问配置信息的 URL。然后，
-     * 当你启动许可微服务示例时，你想运行服务的环境，通过你进入命令行服务启动的 Spring Boot 概要文件指
-     * 定。如果概要文件在命令行中没有指定，Spring Boot 会默认使用打包在应用程序内的 application.yml
-     * 文件包含的配置数据。
+     * 应用程序配置文件的命名约定是 "应用程序名称-环境名称.yml"。环境名称直接转换为可以浏览配置信息的 URL。随
+     * 后，启动许可证微服务示例时，要运行哪个服务环境是由在命令行服务启动时传入的 Spring Boot 的 profile 指
+     * 定的。如果在命令行上没有传入 profile，Spring Boot 将始终默认加载随应用程序打包的 application.yml
+     * 文件中的配置数据。
      *
-     * 下面是你将为许可服务提供的一些应用程序配置数据的一个示例。这些数据将包含在 licensing-service.yml
-     * 文件，如下是这个文件的一部分内容：
+     * 以下是为许可证服务提供的一些应用程序配置数据的示例。这些数据包含在 resources/config/licensingservice
+     * /licensingservice.yml 文件中。下面是此文件的一部分内容：
      *
      * tracer.property: "I AM THE DEFAULT"
      * spring.jpa.database: "POSTGRESQL"
-     * spring.datasource.platform: "postgres"
+     * spring.datasource.platform:  "postgres"
      * spring.jpa.show-sql: "true"
      * spring.database.driverClassName: "org.postgresql.Driver"
      * spring.datasource.url: "jdbc:postgresql://database:5432/eagle_eye_local"
@@ -90,111 +135,110 @@ public class Main {
      * spring.jpa.properties.hibernate.dialect: "org.hibernate.dialect.PostgreSQLDialect"
      *
      *
-     * PS：在实现之前先想一想
+     * PS：在实施前想一想
      *
-     * 这里建议不要使用基于文件系统的解决方案来解决中型到大型云应用程序。使用文件系统方法意味着需要为希望
-     * 访问应用程序配置数据的所有云配置服务器实现共享文件挂载点。在云中设置共享文件系统服务器是可行的，但
-     * 它将维护此环境的责任放在了你身上。
+     * 这里建议不要在中大型云应用中使用基于文件系统的解决方案。使用文件系统方法，意味着要为想要访问应用程序配置
+     * 数据的所有云配置服务器实现共享文件挂载点。在云中创建共享文件系统服务器是可行的，但它将维护此环境的责任放
+     * 在开发人员身上。
      *
-     * 这里展示了文件系统方法，当使用 Spring Cloud 配置服务器时，它是最容易使用的示例。后续将展示如何配
-     * 置 Spring Cloud 配置服务器使用基于云的 Git 提供商，如 Bitbucket 或 GitHub 存储应用程序配置。
+     * 这里将展示如何以文件系统作为入门使用 Spring Cloud 配置服务器的最简单示例。后续将介绍如何配置 Spring
+     * Cloud 配置服务器以使用基于云的 Git 供应商（如 Bitbucket 或 GitHub）来存储应用程序配置。
      *
      *
      *
-     * 1、创建 Spring Cloud 配置引导类
+     * 1、创建 Spring Cloud Config 引导类
      *
-     * 这里所涵盖的每一个 Spring Cloud 服务都需要一个引导类来启动服务。这个引导类将包含两点：一个 Java
-     * main() 方法，作为服务启动的切入点，和一套 Spring Cloud 注解，它们告诉正在启动的服务，它们将为服
-     * 务提供什么样的 Spring Cloud 行为。
+     * 这里涵盖的每一个 Spring Cloud 服务都需要一个用于启动该服务的引导类。这个引导类包含两样东西：作为服务
+     * 启动入口点的 Java main() 方法，以及一组告诉启动的服务将要启动哪种类型的 Spring Cloud 行为的 Spring
+     * Cloud 注解。
      *
-     * 下面显示的 src/main/java/com/siwuxie095/spring/cloud/confsvr/ConfigServerApplication
-     * .java 类，被用作配置服务的引导类。
+     * 如下代码展示了用作配置服务的引导类 Application。
      *
+     * @SuppressWarnings("all")
+     * // Spring Cloud Config 服务是 Spring Boot 应用程序，因此需要用 @SpringBootApplication 进行标记
      * @SpringBootApplication
+     * // @EnableConfigServer 使服务成为 Spring Cloud Config 服务
      * @EnableConfigServer
      * public class ConfigServerApplication {
      *
+     *     // main 方法启动服务并启动 Spring 容器
      *     public static void main(String[] args) {
      *         SpringApplication.run(ConfigServerApplication.class, args);
      *     }
      *
      * }
      *
-     * 接下来，将用最简单的示例建立 Spring Cloud 配置服务器：文件系统。
+     * 接下来，将使用最简单的文件系统示例来搭建 Spring Cloud 配置服务器。
      *
      *
      *
-     * 2、通过配置文件使用 Spring Cloud Config Server
+     * 2、使用带有文件系统的 Spring Cloud 配置服务器
      *
-     * Spring Cloud 配置服务器使用在 src/main/resources/application.yml 文件的一个指向仓库的入口
-     * 点，仓库将存储应用程序的配置数据。建立基于文件系统的存储库是实现这一目标的最简单方法。
+     * Spring Cloud 配置服务器使用 application.yml 文件中的条目指向要保存应用程序配置数据的存储库。创建基
+     * 于文件系统的存储库是实现这一目标的最简单方法。
      *
-     * 为此，添加以下信息来配置服务器的 application.yml 文件。下面的列表显示了 Spring Cloud 配置服务
-     * 器的 application.yml 文件的内容。
+     * 为此，要将以下信息添加到配置服务器的 application.yml 文件中。如下代码展示 Spring Cloud 配置服务器
+     * 的 application.yml 文件的内容。
      *
      * server:
-     *   port: 8888
-     *
+     *   port: 8888    ⇽---  Spring Cloud 配置服务器将要监听的端口
      * spring:
      *   profiles:
-     *     active: native
+     *     active: native    ⇽---  用于存储配置的后端存储库（文件系统）
      *   cloud:
      *     config:
      *       server:
      *         native:
-     *           searchLocations: file:///Users/siwuxie095/book/
-     *           native_cloud_apps/chapter3rd-demo1st/config-service/src/main/
-     *           resources/config/licensingservice
+     *           searchLocations: file:///Users/johncarnell1/book/spmia-code
+     *           /chapter3-code/confsvr/src/main/resources/config/
+     *            licensingservice    ⇽---  配置文件存储位置的路径
      *
-     * 在清单中的配置文件中，你首先告诉配置服务器它应该为所有配置请求监听哪个端口号：
+     * 在这段代码所示的配置文件中，首先告诉配置服务器，对于所有配置信息的请求，应该监听哪个端口号：
      *
      * server:
      *   port: 8888
      *
-     * 因为你正在使用文件系统来存储应用程序配置信息，所以你需要告诉 Spring Cloud 配置服务器以 "native"
-     * 配置文件运行：
+     * 因为这里正在使用文件系统来存储应用程序配置信息，所以需要告诉 Spring Cloud 配置服务器以 "native"
+     * profile 运行：
      *
-     *   profiles:
-     *     active: native
+     * profiles:
+     *   active: native
      *
-     * 在 application.yml 文件最后一部分，Spring Cloud 配置提供了应用数据所在的目录：
+     * application.yml 文件的最后一部分为 Spring Cloud 配置提供了应用程序数据所在的文件目录：
      *
-     *     config:
-     *       server:
-     *         native:
-     *           searchLocations: file:///Users/siwuxie095/book/
-     *           native_cloud_apps/chapter3rd-demo1st/config-service/src/main/
-     *           resources/config/licensingservice
+     * server:
+     *   native:
+     *     searchLocations: file:///Users/johncarnell1/book/spmia_code
+     *     /chapter3-code/confsvr/src/main/resources/config/licensingservice
      *
-     * 配置项的重要参数是 searchLocations 属性。这个属性为每个应用程序提供一个逗号分隔的目录列表，每个
-     * 应用程序都有由配置服务器管理的属性。在这个示例中，你只配置了许可服务。
+     * 配置条目中的重要参数是 searchLocations 属性。这个属性为每一个应用程序提供了用逗号分隔的文件夹列表，
+     * 这些文件夹含有由配置服务器管理的属性。在上一个示例中，只配置了许可证服务。
      *
-     * 注意：如果你使用 Spring Cloud 配置本地文件系统的版本，你需要修改 spring.cloud.config.server
-     * .native.searchlocations 属性来反映当在本地运行你的代码时你的本地文件路径。
+     * 注意：如果使用 Spring Cloud Config 的本地文件系统版本，那么在本地运行代码时，需要修改 spring.cloud
+     * .config.server.native.searchLocations 属性以反映本地文件路径。
      *
-     * 你现在已经完成了足够的工作来启动配置服务器。继续使用 mvn spring-boot:run 命令启动配置服务器。在
-     * 命令行上，服务器现在应该使用 Spring Boot 启动画面启动。如果你将你的浏览器指向到
-     * http://localhost:8888/licensingservice/default，你会看到 JSON 负载返回所有包含在
-     * licensingservice.yml 文件中的属性。
+     * 现在已经完成了足够多的工作来启动配置服务器。接下来，就使用 mvn spring-boot:run 命令启动配置服务器。
+     * 服务器现在应该在命令行上出现一个 Spring Boot 启动画面。如果用浏览器访问 http://localhost:8888
+     * /licensingservice/default，那么将会看到 JSON 净荷与 licensingservice.yml 文件中包含的所有属
+     * 性一起返回。
      *
-     * 如果你想看到许可服务开发环境的配置信息，点击 http://localhost:8888/licensingservice/dev 端
-     * 点，以 GET 方式获取。
+     * 如果想要查看基于开发环境的许可证服务的配置信息，可以对 http://localhost:8888/licensingservice
+     * /dev 端点发起 GET 请求。
      *
-     * 如果仔细查看，你会发现，当你点击 dev 端点时，将返回许可服务的默认配置属性和许可服务的开发环境配置。
-     * Spring Cloud 配置返回两组配置信息的原因是 Spring 框架实现了一个分层的解析属性机制。当 Spring
-     * 框架执行属性解析时，它总是首先查找默认属性中的属性。然后，如果存在一个特定于环境的值，则覆盖默认值。
+     * 如果仔细观察，你会看到在访问开发环境端点时，将返回许可证服务的默认配置属性以及开发环境下的许可证服务
+     * 配置。Spring Cloud 配置返回两组配置信息的原因是，Spring 框架实现了一种用于解析属性的层次结构机制。
+     * 当 Spring框架执行属性解析时，它将始终先查找默认属性中的属性，然后用特定环境的值（如果存在）去覆盖
+     * 默认属性。
      *
      * PS：如果只访问 http://localhost:8888/licensingservice-dev/default，就只有开发环境配置。
      *
-     * 当你请求一个特定环境的概要文件时，概要文件和默认配置文件都返回。
+     * 具体来说，如果在 licensingservice.yml 文件中定义一个属性，并且不在任何其他环境配置文件
+     * （如 licensingservice-dev.yml）中定义它，则 Spring 框架将使用这个默认值。
      *
-     * 具体而言，如果你在 licensingservice.yml 文件定义一个属性，且不能确定它在任何其他环境的配置文件
-     * （例如，在 licensingservice-dev.yml），Spring 框架将使用默认值。
+     * 注意：这不是直接调用 Spring Cloud 配置 REST 端点所看到的行为。REST 端点将返回调用的默认值和环境
+     * 特定值的所有配置值。
      *
-     * 注意：这不是你通过直接调用 Spring Cloud 配置 REST 端点所看到的行为。REST 端点被调用时，将返回
-     * 所有配置的默认值和这些配置特定于环境的值。
-     *
-     * 后续将会介绍如何将 Spring Cloud 配置服务器集成到你的许可微服务。
+     * 后续会介绍如何将 Spring Cloud 配置服务器挂钩到许可证微服务。
      */
     public static void main(String[] args) {
 
