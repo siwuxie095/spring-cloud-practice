@@ -10,10 +10,15 @@ import javax.persistence.Table;
  * @date 2021-05-27 21:29:35
  */
 @SuppressWarnings("all")
+// @Entity 注解告诉 Spring 这是一个 JPA 类
 @Entity
+// @Table 映射到数据库的表
 @Table(name = "licenses")
-public class License{
+public class License {
+
+    // @Id 将该字段标记为主键
     @Id
+    // @Column 将该字段映射到特定数据库表中的列
     @Column(name = "license_id", nullable = false)
     private String licenseId;
 
@@ -127,8 +132,6 @@ public class License{
         this.setComment(comment);
         return this;
     }
-
-
 
 }
 

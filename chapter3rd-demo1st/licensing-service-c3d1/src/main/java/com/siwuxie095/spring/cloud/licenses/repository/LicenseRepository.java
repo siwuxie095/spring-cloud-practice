@@ -11,9 +11,12 @@ import java.util.List;
  * @date 2021-05-27 21:30:50
  */
 @SuppressWarnings("all")
+// 告诉 Spring Boot 这是一个 JPA 存储库类
 @Repository
+// 定义正在扩展 Spring CrudRepository
 public interface LicenseRepository extends CrudRepository<License,String> {
 
+    // 每个查询方法被 Spring 解析为 SELECT...FROM 查询
     public List<License> findByOrganizationId(String organizationId);
 
     public License findByOrganizationIdAndLicenseId(String organizationId, String licenseId);
