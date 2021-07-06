@@ -20,7 +20,7 @@ env:
 script:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
   - mvn clean package docker:build
-  - docker push siwuxie095/licensing-service:chapter4th-demo1st
-  - docker push siwuxie095/organization-service:chapter4th-demo1st
-  - docker push siwuxie095/config-server:chapter4th-demo1st
-  - docker push siwuxie095/eureka-server:chapter4th-demo1st
+  - docker push johncarnell/tmx-licensing-service:chapter4
+  - docker push johncarnell/tmx-organization-service:chapter4
+  - docker push johncarnell/tmx-confsvr:chapter4
+  - docker push johncarnell/tmx-eurekasvr:chapter4
