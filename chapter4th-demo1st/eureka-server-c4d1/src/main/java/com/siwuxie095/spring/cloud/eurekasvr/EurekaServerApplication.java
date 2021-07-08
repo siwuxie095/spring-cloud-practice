@@ -10,6 +10,7 @@ import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
  */
 @SuppressWarnings("all")
 @SpringBootApplication
+// 在 Spring 服务中启用 Eureka 服务器
 @EnableEurekaServer
 public class EurekaServerApplication {
 
