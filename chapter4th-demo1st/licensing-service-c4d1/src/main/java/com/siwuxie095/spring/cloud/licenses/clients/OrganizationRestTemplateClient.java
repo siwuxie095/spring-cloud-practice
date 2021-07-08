@@ -19,6 +19,7 @@ public class OrganizationRestTemplateClient {
     RestTemplate restTemplate;
 
     public Organization getOrganization(String organizationId){
+        // 在使用支持 Ribbon 的 RestTemplate 时，使用 Eureka 服务 ID 来构建目标 URL
         ResponseEntity<Organization> restExchange =
                 restTemplate.exchange(
                         "http://organizationservice/v1/organizations/{organizationId}",

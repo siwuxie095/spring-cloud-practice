@@ -14,10 +14,13 @@ import org.springframework.web.client.RestTemplate;
  */
 @SuppressWarnings("all")
 @SpringBootApplication
+// 激活 Spring DiscoveryClient
 @EnableDiscoveryClient
+// 需要使用 @EnableFeignClients 以在代码中启用 Feign 客户端
 @EnableFeignClients
 public class Application {
 
+    // @LoadBalanced 注解告诉 Spring Cloud 创建一个支持 Ribbon 的 RestTemplate 类
     @LoadBalanced
     @Bean
     public RestTemplate getRestTemplate(){

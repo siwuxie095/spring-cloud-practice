@@ -33,15 +33,14 @@ public class LicenseServiceController {
     @RequestMapping(value="/{licenseId}",method = RequestMethod.GET)
     public License getLicenses( @PathVariable("organizationId") String organizationId,
                                 @PathVariable("licenseId") String licenseId) {
-
         return licenseService.getLicense(organizationId, licenseId, "");
     }
 
-    @RequestMapping(value="/{licenseId}/{clientType}",method = RequestMethod.GET)
-    public License getLicensesWithClient( @PathVariable("organizationId") String organizationId,
-                                          @PathVariable("licenseId") String licenseId,
-                                          @PathVariable("clientType") String clientType) {
-
+    // clientType 确定 Spring REST 要使用的客户端的类型
+    @RequestMapping(value = "/{licenseId}/{clientType}", method = RequestMethod.GET)
+    public License getLicensesWithClient(@PathVariable("organizationId") String organizationId,
+                                         @PathVariable("licenseId") String licenseId,
+                                         @PathVariable("clientType") String clientType) {
         return licenseService.getLicense(organizationId,licenseId, clientType);
     }
 

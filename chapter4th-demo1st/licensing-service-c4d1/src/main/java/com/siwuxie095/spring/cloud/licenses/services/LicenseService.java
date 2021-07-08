@@ -61,16 +61,19 @@ public class LicenseService {
         return organization;
     }
 
-    public License getLicense(String organizationId,String licenseId, String clientType) {
-        License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId);
+    public License getLicense(String organizationId,
+                              String licenseId,
+                              String clientType) {
+        License license = licenseRepository
+                .findByOrganizationIdAndLicenseId(organizationId, licenseId);
 
         Organization org = retrieveOrgInfo(organizationId, clientType);
 
         return license
-                .withOrganizationName( org.getName())
-                .withContactName( org.getContactName())
-                .withContactEmail( org.getContactEmail() )
-                .withContactPhone( org.getContactPhone() )
+                .withOrganizationName(org.getName())
+                .withContactName(org.getContactName())
+                .withContactEmail(org.getContactEmail())
+                .withContactPhone(org.getContactPhone())
                 .withComment(config.getExampleProperty());
     }
 

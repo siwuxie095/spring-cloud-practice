@@ -19,20 +19,26 @@ import java.util.List;
 @Component
 public class OrganizationDiscoveryClient {
 
+    // DiscoveryClient 被自动注入这个类
     @Autowired
     private DiscoveryClient discoveryClient;
 
     public Organization getOrganization(String organizationId) {
         RestTemplate restTemplate = new RestTemplate();
-        List<ServiceInstance> instances = discoveryClient.getInstances("organizationservice");
+        // 获取组织服务的所有实例的列表
+        List<ServiceInstance> instances =
+                discoveryClient.getInstances("organizationservice");
 
         if (instances.size()==0) {
             return null;
         }
-        String serviceUri = String.format("%s/v1/organizations/%s",instances.get(0).getUri().toString(), organizationId);
+        // 检索要调用的服务端点
+        String serviceUri = String.format("%s/v1/organizations/%s",
+                instances.get(0).getUri().toString(),
+                organizationId);
         System.out.println("!!!! SERVICE URI:  " + serviceUri);
 
-
+        // 使用标准的 Spring REST 模板类去调用服务
         ResponseEntity< Organization > restExchange =
                 restTemplate.exchange(
                         serviceUri,
@@ -41,5 +47,6 @@ public class OrganizationDiscoveryClient {
 
         return restExchange.getBody();
     }
+
 }
 
