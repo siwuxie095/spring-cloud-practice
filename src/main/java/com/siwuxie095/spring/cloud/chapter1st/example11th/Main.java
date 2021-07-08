@@ -93,9 +93,9 @@ public class Main {
      * 式负载均衡器并将其移动到客户端，可以消除应用程序基础设施中的其他故障点（故障的负载均衡器）。
      *
      * 希望此刻会给你留下深刻印象，因为只需要几个注解就可以为微服务添加大量的功能。这就是 Spring Cloud 背后真正的美。
-     * 作为开发人员，我们可以利用 Netflix 和 Consul 等知名的云计算公司的微服务功能，这些功能是久经考验的。如果在
-     * Spring Cloud 之外使用这些功能，可能会很复杂并且难以设置。Spring Cloud 简化了它们的使用，仅仅是使用一些简单
-     * 的 Spring Cloud 注解和配置条目。
+     * 开发者可以利用 Netflix 和 Consul 等知名的云计算公司的微服务功能，这些功能是久经考验的。如果在 Spring Cloud
+     * 之外使用这些功能，可能会很复杂并且难以设置。Spring Cloud 简化了它们的使用，仅仅是使用一些简单的 Spring Cloud
+     * 注解和配置条目。
      */
     public static void main(String[] args) {
 

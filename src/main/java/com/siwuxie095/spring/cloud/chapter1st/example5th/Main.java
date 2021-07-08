@@ -20,7 +20,7 @@ public class Main {
      *
      * 如下展示了这个服务将会做什么，以及 Spring Boot 微服务将会如何处理用户请求的一般流程。
      * （1）客户端：客户端发送一个 HTTP GET 请求到 Hello 微服务。
-     * （2）路由映射：Spring Boot 将解析 HTTP 请求，并根据 HTTP 谓词、URL 和 URL 定义的潜在参数映射路由。
+     * （2）路由映射：Spring Boot 将解析 HTTP 请求，并根据 HTTP 动词、URL 和 URL 定义的潜在参数映射路由。
      * 路由映射到 Spring RestController 类中的方法。
      * （3）参数解构：Spring Boot 识别出路由后，将路由中定义的所有参数映射到执行该工作的 Java 方法中。
      * （4）JSON 到 Java 对象映射：对于 HTTP PUT 或 POST 请求，在 HTTP 主体中传递的 JSON 被映射到
