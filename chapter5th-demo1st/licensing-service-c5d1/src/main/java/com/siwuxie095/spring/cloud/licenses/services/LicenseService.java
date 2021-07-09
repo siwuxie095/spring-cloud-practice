@@ -54,7 +54,8 @@ public class LicenseService {
         return organizationRestClient.getOrganization(organizationId);
     }
 
-    private void randomlyRunLong(){
+    // randomlyRunLong() 方法提供了 1/3 的概率运行耗时较长的数据库调用
+    private void randomlyRunLong() {
         Random rand = new Random();
 
         int randomNum = rand.nextInt((3 - 1) + 1) + 1;
@@ -64,7 +65,7 @@ public class LicenseService {
         }
     }
 
-    private void sleep(){
+    private void sleep() {
         try {
             Thread.sleep(11000);
         } catch (InterruptedException e) {
@@ -72,17 +73,18 @@ public class LicenseService {
         }
     }
 
+    // @HystrixCommand 注解会使用 Hystrix 断路器包装 getLicenseByOrg() 方法
     @HystrixCommand(//fallbackMethod = "buildFallbackLicenseList",
             threadPoolKey = "licenseByOrgThreadPool",
             threadPoolProperties =
-                    {@HystrixProperty(name = "coreSize",value="30"),
-                            @HystrixProperty(name="maxQueueSize", value="10")},
-            commandProperties={
-                    @HystrixProperty(name="circuitBreaker.requestVolumeThreshold", value="10"),
-                    @HystrixProperty(name="circuitBreaker.errorThresholdPercentage", value="75"),
-                    @HystrixProperty(name="circuitBreaker.sleepWindowInMilliseconds", value="7000"),
-                    @HystrixProperty(name="metrics.rollingStats.timeInMilliseconds", value="15000"),
-                    @HystrixProperty(name="metrics.rollingStats.numBuckets", value="5")}
+                    {@HystrixProperty(name = "coreSize",value = "30"),
+                            @HystrixProperty(name = "maxQueueSize", value = "10")},
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "75"),
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "7000"),
+                    @HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "15000"),
+                    @HystrixProperty(name = "metrics.rollingStats.numBuckets", value = "5")}
     )
     public List<License> getLicensesByOrg(String organizationId){
         logger.debug("LicenseService.getLicensesByOrg  Correlation id: {}", UserContextHolder.getContext().getCorrelationId());
