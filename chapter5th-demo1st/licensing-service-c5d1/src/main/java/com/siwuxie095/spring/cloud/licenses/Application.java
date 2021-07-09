@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 @SuppressWarnings("all")
 @SpringBootApplication
 @EnableEurekaClient
+// 告诉 Spring Cloud 将要为服务使用 Hystrix
 @EnableCircuitBreaker
 public class Application {
 
