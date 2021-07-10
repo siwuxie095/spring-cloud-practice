@@ -8,59 +8,60 @@ package com.siwuxie095.spring.cloud.chapter7th.example3rd;
 public class Main {
 
     /**
-     * 从小事做起：使用 Spring 和 OAuth2 保护一个单独的端点
+     * 从小事做起：使用 Spring 和 OAuth2 来保护单个端点
      *
-     * 了解如何创建 OAuth2 的身份验证和授权部分，你要实现 OAuth2 密码授权类型。要实现此授权，你需要做以下事情：
-     * （1）创建一个基于 Spring Cloud 的 OAuth2 认证服务。
-     * （2）注册一个仿制的 EagleEyeUI 应用程序作为一个授权的应用程序，使用 OAuth2 服务可以进行身份验证和授权
-     * 用户身份。
-     * （3）使用 OAuth2 密码授权来保护你的 EagleEye 服务。你不会为 EagleEye 构建 UI，所以你会使用 POSTMAN
-     * 模拟一个用户登录，用你的 EagleEye OAuth2 服务来进行身份验证。
-     * （4）保护许可和组织服务，以便它们只能由经过身份验证的用户调用。
-     *
+     * 为了了解如何建立 OAuth2 的验证和授权功能，这里将实现 OAuth2 密码授权类型。要实现这一授权，将执行以下操作。
+     * （1）建立一个基于 Spring Cloud 的 OAuth2 验证服务。
+     * （2）注册一个伪 EagleEye UI 应用程序作为一个已授权的应用程序，它可以通过 OAuth2 服务验证和授权用户身份。
+     * （3）使用 OAuth2 密码授权来保护 EagleEye 服务。这里不会为 EagleEye 构建 UI，而是使用 POSTMAN 模拟登
+     * 录的用户对 EagleEye OAuth2 服务进行验证。
+     * （4）保护许可证服务和组织服务，使它们只能被已通过验证的用户调用。
      *
      *
-     * 1、配置 EagleEye OAuth2 认证服务
      *
-     * 和其他服务一样，你的 OAuth2 认证服务将是另一个 Spring Boot 服务。认证服务将对用户凭据进行身份验证并发
-     * 出令牌。每当用户试图通过认证服务访问受保护的服务，认证服务将验证它发布的 OAuth2 令牌并确认它没有过期。
+     * 1、建立 EagleEye OAuth2 验证服务
      *
-     * 开始之前，你要做两件事：
-     * （1）为你的引导类引入需要的适当的 Maven 构建依赖。
-     * （2）引导类将作为服务的入口点。
+     * 就像这里所有的例子一样，OAuth2 验证服务将是另一个 Spring Boot 服务。验证服务将验证用户凭据并颁发令牌。每
+     * 当用户尝试访问由验证服务保护的服务时，验证服务将确认 OAuth2 令牌是否已由其颁发并且尚未过期。
      *
-     * 为建立一个 OAuth2 认证服务器，你需要在 authentication-service/pom.xml 文件添加以下 Spring Cloud
-     * 依赖：
+     * 开始时，需要完成以下两件事。
+     * （1）添加引导类所需的适当 Maven 构建依赖项。
+     * （2）添加一个将作为服务的入口点的引导类。
      *
-     *         <dependency>
-     *             <groupId>org.springframework.cloud</groupId>
-     *             <artifactId>spring-cloud-security</artifactId>
-     *         </dependency>
-     *         <dependency>
-     *             <groupId>org.springframework.security.oauth</groupId>
-     *             <artifactId>spring-security-oauth2</artifactId>
-     *         </dependency>
+     * 要建立 OAuth2 验证服务器，需要在 authentication-service/pom.xml 文件中添加以下 Spring Cloud 依赖项：
      *
-     * 第一个依赖是 spring-cloud-security，它引入了传统的 Spring 和 Spring Cloud security 库。第二个依
-     * 赖是 spring-security-oauth2，从 Spring OAuth2 库拉取。
+     * <dependency>
+     *   <groupId>org.springframework.cloud</groupId>
+     *   <artifactId>spring-cloud-security</artifactId>
+     * </dependency>
      *
-     * 现在，已经定义了 Maven 依赖，你可以在引导类继续工作。如下所示。
+     * <dependency>
+     *   <groupId>org.springframework.security.oauth</groupId>
+     *   <artifactId>spring-security-oauth2</artifactId>
+     * </dependency>
+     *
+     * （1）第一个依赖项 spring-cloud-security 引入了通用 Spring 和 Spring Cloud 安全库。
+     * （2）第二个依赖项 spring-security-oauth2 拉取了 Spring OAuth2 库。
+     *
+     * 既然已经定义完Maven依赖项，那么就可以在引导类上进行工作。如下是 Application 类的代码。
      *
      * @SpringBootApplication
      * @RestController
      * @EnableResourceServer
+     * // 用于告诉 Spring Cloud，该服务将作为 OAuth2 服务
      * @EnableAuthorizationServer
      * public class Application {
      *
-     *     @RequestMapping(value = { "/user" }, produces = "application/json")
+     *     @RequestMapping(value = {"/user"}, produces = "application/json")
      *     public Map<String, Object> user(OAuth2Authentication user) {
      *         Map<String, Object> userInfo = new HashMap<>();
-     *         userInfo.put("user", user.getUserAuthentication().getPrincipal());
-     *         userInfo.put("authorities", AuthorityUtils.authorityListToSet(
-     *         user.getUserAuthentication().getAuthorities()));
+     *         userInfo.put("user",
+     *                 user.getUserAuthentication().getPrincipal());
+     *         userInfo.put("authorities",
+     *                 AuthorityUtils.authorityListToSet(
+     *                         user.getUserAuthentication().getAuthorities()));
      *         return userInfo;
      *     }
-     *
      *
      *     public static void main(String[] args) {
      *         SpringApplication.run(Application.class, args);
@@ -68,32 +69,35 @@ public class Main {
      *
      * }
      *
-     * 这里要注意的第一件事是 @EnableAuthorizationServer 注解。这个注解告诉 Spring Cloud，这个服务将被作
-     * 为一个 OAuth2 服务和添加一些基于 REST 的端点，这些端点将被用于 OAuth2 认证和授权处理。
+     * 在这段代码中，要注意的第一样东西是 @EnableAuthorizationServer 注解。这个注解告诉 Spring Cloud，该服务
+     * 将用作 OAuth2 服务，并添加几个基于 REST 的端点，这些端点将在 OAuth2 验证和授权过程中使用。
      *
-     * 第二件事是你会看到一个称为 /user（它映射到/auth/user）端点的加入。后续当你试图访问受 OAuth2 保护的服
-     * 务，你将会使用这个端点。这个端点被受保护的服务调用来验证 OAuth2 访问令牌和检索用户访问受保护服务的指定
-     * 角色。
-     *
-     *
-     *
-     * 2、在 OAuth2 服务注册客户端应用
-     *
-     * 此时，你拥有一个认证服务，但尚未在身份验证服务器中定义任何的应用程序、用户或角色。你可以开始在你的认证服务
-     * 注册 EagleEye 应用。为了这样做，你将在你的认证服务创建一个称为 OAuth2Config 的额外类。
-     *
-     * 这个类将定义哪些应用程序在你的 OAuth2 认证服务注册。需要注意的是，仅仅因为一个应用程序在你的 OAuth2 服
-     * 务被注册，但这并不意味着服务可以访问任意受保护的资源。
+     * 在这段代码中，看到的第二件事是添加了一个名为 /user（映射到 /auth/user ）的端点。当试图访问由 OAuth2 保护
+     * 的服务时，将会用到这个端点。此端点由受保护服务调用，以确认 OAuth2 访问令牌，并检索访问受保护服务的用户所分
+     * 配的角色。
      *
      *
-     * PS：关于认证与授权
      *
-     * 开发人员经常会 "混合搭配" 术语认证和授权的含义。认证是用户通过提供凭证来证明他们是谁的行为。授权决定用户
-     * 是否被允许做他们想做的事情。例如，用户 Jim 可以通过提供用户 ID 和密码来证明自己的身份，但他可能没有权限
-     * 查看诸如工资数据之类的敏感数据。为了这里讨论的目的，在授权发生之前必须对用户进行身份验证。
+     * 2、使用 OAuth2 服务注册客户端应用程序
      *
-     * OAuth2Config 类可以让 OAuth2 服务知道的应用程序和用户凭证。如下所示。
+     * 此时，已经有了一个验证服务，但尚未在验证服务器中定义任何应用程序、用户或角色。
      *
+     * 这里可以从已通过验证服务注册 EagleEye 应用程序开始。为此，将在验证服务中创建一个名为 OAuth2Config 的类。
+     *
+     * 这个类将定义通过 OAuth2 验证服务注册哪些应用程序。需要注意的是，不能只因为应用程序通过 OAuth2 服务中注册
+     * 过，就认为该服务能够访问任何受保护资源。
+     *
+     *
+     * PS：验证与授权
+     *
+     * 开发人员混淆术语验证（authentication）和授权（authorization）的含义。验证是用户通过提供凭据来证明他们
+     * 是谁的行为。授权决定是否允许用户做他们想做的事情。例如，Jim 可以通过提供用户 ID 和密码来证明他的身份，但
+     * 是他可能没有被授权查看敏感数据，如工资单数据。出于这里讨论的目的，必须在授权发生之前对用户进行验证。
+     *
+     *
+     * OAuth2Config 类定义了 OAuth2 服务知道的应用程序和用户凭据。如下所示。
+     *
+     * // 继承 AuthorizationServerConfigurerAdapter 类，并使用 @Configuration 注解标注这个类
      * @Configuration
      * public class OAuth2Config extends AuthorizationServerConfigurerAdapter {
      *
@@ -103,6 +107,7 @@ public class Main {
      *     @Autowired
      *     private UserDetailsService userDetailsService;
      *
+     *     // 覆盖 configure() 方法。这定义了哪些客户端将注册到服务。
      *     @Override
      *     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
      *         clients.inMemory()
@@ -112,6 +117,8 @@ public class Main {
      *                 .scopes("webclient", "mobileclient");
      *     }
      *
+     *     // 该方法定义了 AuthenticationServerConfigurer 中使用的不同组件。这段代码告诉 Spring 使用
+     *     // Spring 提供的默认验证管理器和用户详细信息服务
      *     @Override
      *     public void configure(AuthorizationServerEndpointsConfigurer endpoints)
      *     throws Exception {
@@ -122,87 +129,90 @@ public class Main {
      *
      * }
      *
-     * 这里注意到的第一件事是你扩展了 Spring 的 AuthenticationServerConfigurer 类，然后使用 @Configuration
-     * 注解标记类。这个 AuthenticationServerConfigurer 类是 Spring 安全的核心部分。它提供了实现密钥认证和授权
-     * 功能的基本机制。对于 OAuth2Config 类你将要重写两个方法。第一个方法，configure()，被用于定义什么客户端应用
-     * 程序在你的认证服务注册。这个 configure() 方法需要一个称为 clients，类型为 ClientDetailsServiceConfigurer
-     * 的参数。
+     * 在这段代码中，要注意的第一件事是，这个类扩展了 Spring 的 AuthenticationServerConfigurer 类，然后使用
+     * @Configuration 注解对这个类进行了标记。AuthenticationServerConfigurer 类是 Spring Security 的核
+     * 心部分，它提供了执行关键验证和授权功能的基本机制。对于 OAuth2Config 类，这里将要覆盖两个方法。第一个方法
+     * 是 configure()，它用于定义通过验证服务注册了哪些客户端应用程序。configure() 方法接受一个名为 clients
+     * 的 ClientDetailsServiceConfigurer 类型的参数。
      *
-     * 下面开始更详细的了解 configure() 方法。你在这个方法的第一件事就是注册客户端应用程序，它可以访问受 OAuth2
-     * 服务保护的服务。这里用了最广泛的术语 "访问"，因为你可以通过检查被调用服务的用户是否被授权采取他们要采取的行
-     * 动来控制客户端应用程序的用户稍后可以做什么：
+     * 下面来更详细地了解一下 configure() 方法中的代码。在这个方法中做的第一件事是注册哪些客户端应用程序允许访问
+     * 由 OAuth2 服务保护的服务。这里使用了最广泛的术语 "访问"（access），因为这里通过检查调用服务的用户是否有
+     * 权采取他们正在尝试的操作，控制了客户端应用程序的用户以后可以做什么。
      *
-     *         clients.inMemory()
-     *                 .withClient("eagleeye")
-     *                 .secret("thisissecret")
-     *                 .authorizedGrantTypes("refresh_token", "password", "client_credentials")
-     *                 .scopes("webclient", "mobileclient");
+     * clients.inMemory()
+     *     .withClient("eagleeye")
+     *     .secret("thisissecret")
+     *     .authorizedGrantTypes("password", "client_credentials")
+     *     .scopes("webclient", "mobileclient");
      *
-     * ClientDetailsServiceConfigurer 类支持应用程序信息的两种不同的存储类型：内存存储和 JDBC 存储。在这个
-     * 例子中，你将使用 clients.inMemory() 内存存储。
+     * 对于应用程序的信息，ClientDetailsServiceConfigurer 类支持两种不同类型的存储：内存存储和 JDBC 存储。对
+     * 本例来说，将使用 clients.inMemory() 存储。
      *
-     * 这两个称为 withClient() 和 secret() 的方法提供应用程序（EagleEye）的名称，该应用程序连同一把密钥（密
-     * 码，thisissecret）一起注册，当 EagleEye 应用程序调用 OAuth2 服务器来接收一个 OAuth2 访问令牌时密钥
-     * 将被提交。
+     * withClient() 和 secret() 这两个方法提供了注册的应用程序的名称（eagleeye）以及密钥（thisissecret），
+     * 该密钥在 EagleEye 应用程序调用 OAuth2 服务器以接收 OAuth2 访问令牌时提供。
      *
-     * 下一个方法，authorizedGrantTypes()，传递的是一个逗号分隔的授权批准类型的列表，会在你的 OAuth2 服务
-     * 支持列表。在你的服务中，你将支持密码和客户凭证授权。scopes() 方法用于定义当他们询问你的 OAuth2 服务器
-     * 访问令牌时，调用的应用程序可以运行的边界。
+     * 下一个方法是 authorizedGrantTypes()，它被传入一个以逗号分隔的授权类型列表，这些授权类型将由 OAuth2 服
+     * 务支持。在这个服务中，将支持密码授权类型和客户端凭据授权类型。而 scopes() 方法用于定义调用应用程序在请求
+     * OAuth2 服务器获取访问令牌时可以操作的范围。例如，ThoughtMechanix 可能提供同一应用程序的两个不同版本：基
+     * 于 Web 的应用程序和基于手机的应用程序。在这些应用程序中都可以使用相同的客户端名称和密钥来请求对 OAuth2 服
+     * 务器保护的资源的访问。然而，当应用程序请求一个密钥时，它们需要定义它们所操作的特定作用域。通过定义作用域，
+     * 可以编写特定于客户端应用程序所工作的作用域的授权规则。
      *
-     * 例如，Thoughtmechanix 可以提供相同的应用程序的两个不同的版本，一个 Web 的应用程序和移动端应用程序。这
-     * 些应用程序可以使用相同的客户端名称和密钥，通过 OAuth2 服务器请访问受保护的资源。然而，当应用程序需要一
-     * 个密钥时，他们需要定义它们所运行的特定范围。通过定义作用域，你可以编写特定于客户端应用程序正在工作的范围
-     * 的授权规则。
+     * 例如，可能有一个用户使用基于 Web 的客户端和手机应用程序来访问 EagleEye 应用程序。EagleEye 应用程序的每
+     * 个版本都：
+     * （1）提供相同的功能；
+     * （2）是一个 "受信任的应用程序"，ThoughtMechanix 既拥有前端应用程序，也拥有终端用户服务。
      *
-     * 例如，你可能有一个用户既可以访问 EagleEye 应用的 Web 客户端应用程序，也可以访问移动端应用程序。应用程
-     * 序的每个版本都做以下事情：
-     * （1）提供相同的功能。
-     * （2）是一个 "受信任的应用程序"，ThoughtMechanix 同时拥有 EagleEye 的前端应用程序和后端用户服务。
+     * 因此，这里将使用相同的应用程序名称和密钥来注册 EagleEye 应用程序，但是 Web 应用程序只使用 "webclient"
+     * 作用域，而手机版本的应用程序则使用 "mobileclient" 作用域。通过使用作用域，可以在受保护的服务中定义授权
+     * 规则，该规则可以根据登录的应用程序限制客户端应用程序可以执行的操作。这与用户拥有的权限无关。例如，可能希望
+     * 根据用户是使用公司网络中的浏览器，还是使用移动设备上的应用程序进行浏览，来限制用户可以看到哪些数据。在处理
+     * 敏感客户信息（如健康记录或税务信息）时，基于数据访问机制限制数据的做法是很常见的。
      *
-     * 因此，你将使用相同的应用名称和密钥注册 EagleEye 应用，而 Web 应用程序只会在 "webclient" 范围使用，而
-     * 移动端应用程序将在 "mobileclient" 范围使用。通过使用作用域，你可以在受保护的服务中定义授权规则，这些规
-     * 则可以限制应用程序客户根据他们登录的应用程序可以采取什么操作。这将不考虑用户拥有什么权限。例如，你可能希
-     * 望根据用户在公司的内部网络中使用浏览器而不是在移动设备上浏览应用程序来限制用户可以看到哪些数据。在处理敏
-     * 感客户信息（例如健康记录或税务信息）时，基于数据访问机制限制数据的实践是常见的。
-     *
-     * 此时，你已经注册了一个单独的应用程序，EagleEye，以及 OAuth2 服务器。但是，由于你使用的是密码授权，所以
-     * 在开始之前，你需要为这些用户设置用户账户和密码。
+     * 到目前为止，已经使用 OAuth2 服务器注册了一个应用程序 EagleEye。然而，因为使用的是密码授权，所以需要在开
+     * 始之前为这些用户创建用户账户和密码。
      *
      *
      *
      * 3、配置 EagleEye 用户
      *
-     * 你已经定义并存储了应用程序名称和密钥。现在你将创建个人用户凭证和它们所属亍的角色。用户角色将用于定义一组
-     * 用户可以使用一个服务所做的操作。
+     * 这里已经定义并存储了应用程序级的密钥名和密钥。现在要创建个人用户凭据及其所属的角色。用户角色将用于定义一组
+     * 用户可以对服务执行的操作。
      *
-     * Spring 可以从内存数据存储、JDBC 支持的关系数据库或 LDAP 服务器中存储和检索用户信息（个人用户的凭证和
-     * 分配给用户的角色）。
+     * Spring 可以从内存数据存储、支持 JDBC 的关系数据库或 LDAP 服务器中存储和检索用户信息（个人用户的凭据和分
+     * 配给用户的角色）。
      *
-     * 注意：就定义而言，这里要注意一些事项。Spring 的 OAuth2 应用信息可以将它的数据存储在内存或关系数据库中。
-     * Spring 用户凭证和安全角色可以存储在内存数据库、关系数据库或 LDAP（活动目录）服务器中。因为这里的主要目
-     * 的是了解 OAuth2，为保持事情简单，你将使用一个内存数据存储。
+     * 注意：这里希望在定义上谨慎一些。Spring 的 OAuth2 应用程序信息可以存储在内存或关系数据库中。Spring 用户
+     * 凭据和安全角色可以存储在内存数据库、关系数据库或 LDAP（活动目录）服务器中。因为这里主要目的是学习 OAuth2，
+     * 为了保持简单，将使用内存数据存储。
      *
-     * 这里你要使用一个内存数据存储定义用户角色。你要定义两个用户账户：john.carnell 和 william.woodward。
-     * john.carnell 将拥有 USER 角色，william.woodward 将拥有 ADMIN 角色。
+     * 对于这里的代码示例，将使用内存数据存储来定义用户角色。
      *
-     * 为了配置你的 OAuth2 服务器进行用户 ID 认证，你需要创建一个新的类：WebSecurityConfigurer。如下所示。
+     * 这里将定义两个用户账户，即 john.carnell 和 william.woodward。john.carnell 账户将拥有 USER 角色，
+     * 而 william.woodward 账户将拥有 ADMIN 角色。
      *
+     * 要配置 OAuth2 服务器以验证用户 ID，必须创建一个新类 WebSecurityConfigurer。如下所示。
+     *
+     * // 扩展核心 Spring Security 的 WebSecurityConfigurerAdapter
      * @Configuration
      * public class WebSecurityConfigurer extends WebSecurityConfigurerAdapter {
      *
+     *     // AuthenticationManagerBean 被 Spring Security 用来处理验证
      *     @Override
      *     @Bean
      *     public AuthenticationManager authenticationManagerBean() throws Exception {
      *         return super.authenticationManagerBean();
      *     }
      *
+     *     // Spring Security 使用 UserDetailsService 处理返回的用户信息，
+     *     // 这些用户信息将由 Spring Security 返回
      *     @Override
      *     @Bean
      *     public UserDetailsService userDetailsServiceBean() throws Exception {
      *         return super.userDetailsServiceBean();
      *     }
      *
-     *
+     *     // configure() 方法是定义用户、密码和角色的地方
      *     @Override
      *     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
      *         auth
@@ -214,69 +224,79 @@ public class Main {
      *
      * }
      *
-     * 与 Spring 安全框架的其他部分一样，要创建用户（以及他们的角色），首先扩展 WebSecurityConfigurerAdapter
-     * 类并用 @Configuration 注解标记它。Spring 安全的实现方式类似于如何将乐高积木组合起来构建一个玩具汽车或模
-     * 型。因此，你需要为 OAuth2 服务器提供对用户进行身份验证和返回认证用户的用户信息的机制。这是通过在 Spring
-     * WebSecurityConfigurerAdapter 实现中定义两个 bean 完成的： authenticationManagerBean() 和
-     * userDetailsServiceBean()。 通过使用父类 WebSecurityConfigurerAdapter 默认的验证方法
-     * authenticationManagerBean() 和 userDetailsServiceBean() 来暴露这两个 bean。
+     * 像 Spring Security 框架的其他部分一样，要创建用户（及其角色），要从扩展 WebSecurityConfigurerAdapter
+     * 类并使用 @Configuration 注解标记它开始。Spring Security 的实现方式类似于将乐高积木搭在一起来制造玩具车
+     * 或模型。因此，需要为 OAuth2 服务器提供一种验证用户的机制，并返回正在验证的用户的用户信息。这通过在 Spring
+     * WebSecurityConfigurerAdapter 实现中定义 authenticationManagerBean() 和 userDetailsServiceBean()
+     * 两个 bean 来完成。
      *
-     * 这些 bean 会被注入到在 OAuth2Config 类中的 configure(AuthorizationServerEndpointsConfigurer
-     * endpoints) 方法：
+     * 这两个 bean 通过使用父类 WebSecurityConfigurerAdapter 中的默认验证 authenticationManagerBean() 和
+     * userDetailsServiceBean() 方法来公开。
      *
-     *     @Override
-     *     public void configure(AuthorizationServerEndpointsConfigurer endpoints)
-     *     throws Exception {
-     *         endpoints
-     *                 .authenticationManager(authenticationManager)
-     *                 .userDetailsService(userDetailsService);
-     *     }
-     *
-     * 这两个 bean 用于配置下面将看到的 /auth/oauth/token 和 /auth/user 端点。
+     * 而这两个 bean 也被注入到 OAuth2Config 类中的 configure(AuthorizationServerEndpointsConfigurer
+     * endpoints) 方法中。同时，这两个 bean 用于配置 /auth/oauth/token 和 /auth/user 端点。
      *
      *
      *
-     * 4、用户认证
+     * 4、验证用户
      *
-     * 此刻，你有足够的基于 OAuth2 服务器的功能来执行密码授权流程的应用和用户认证。现在，你将模拟用户通过使用
-     * POSTMAN 提交 http://localhost:8901/auth/oauth/token 端点，并提供应用名称、密钥、用户 ID 和密码，
-     * 获得一个 OAuth2 令牌。
+     * 此时，已经拥有足够多的基本 OAuth2 服务器功能来执行应用程序，并且能够执行密码授权流程的用户验证。现在将通过
+     * 使用 POSTMAN 发送 POST 请求到 http://localhost:8901/auth/oauth/token 端点并提供应用程序名称、密钥、
+     * 用户 ID 和密码来模拟用户获取 OAuth2 令牌。
      *
-     * 首先，你需要在 POSTMAN 设置应用程序名称和密钥。你将传递这些用于基本身份验证的 OAuth2 服务器端点的元素。
+     * 首先，需要使用应用程序名称和密钥设置 POSTMAN。这里将使用基本验证将这些元素传递到 OAuth2 服务器端点。
      *
-     * 但是，你还没有准备发起调用来获取令牌。一旦配置了应用程序名称和密钥，就需要将服务中的下列信息作为 HTTP
-     * 表单参数传递：
-     * （1）grant_type：OAuth2 授权你执行的类型。在本例中，你将使用密码授权。
-     * （2）scope：应用范围。因为在注册应用程序时只定义了两个合法作用域（webclient 和 mobileclient），传入
-     * 的值必须是这两个范围中的一个。
-     * （3）username：登录用户的名称。
-     * （4）password：用户登录密码。
+     * 但是，这里还没有准备好执行调用来获取令牌。一旦配置了应用程序名称和密钥，就需要在服务中传递以下信息作为 HTTP
+     * 表单参数。
+     * （1）grant_type：正在执行的 OAuth2 授权类型。在本例中，将使用密码（password）授权。
+     * （2）scope：应用程序作用域。因为这里在注册应用程序时只定义了两个合法作用域（webclient 和 mobileclient），
+     * 因此传入的值必须是这两个作用域之一。
+     * （3）username：用户登录的名称。
+     * （4）password：用户登录的密码。
      *
-     * 与其他 REST 调用不同，该列表中的参数不会作为 JavaScript 报文体传入。OAuth2 标准希望所有的参数通过
-     * HTTP 表单参数传递到令牌生成的端点。
+     * 与一般的 REST 调用不同，这个列表中的参数不会作为 JSON 体传递。OAuth2 标准期望传递给令牌生成端点的所有参数
+     * 都是 HTTP 表单参数。
      *
-     * 当请求 /auth/oauth/token 端点后，返回的 JSON 包含了五个属性：
-     * （1）access_token：OAuth2 令牌随用户向一个受保护资源发出的每个服务调用一起出现。
-     * （2）token_type：令牌类型。OAuth2 规范允许你定义多个令牌类型。最常用的令牌类型是 bearer 令牌。在这
-     * 里中，不涉及任何其他令牌类型。
-     * （3）refresh_token：包含一个令牌，在令牌过期后它可以返回到 OAuth2 服务器来重新发布一个令牌。
-     * （4）expires_in：这是 OAuth2 访问令牌过期前的秒数。Spring 中授权令牌过期的默认值是 12 小时。
-     * （5）scope：OAuth2 令牌的有效范围。
+     * 如下展示了为 OAuth2 调用配置的 HTTP 表单参数。
+     * （1）grant_type：password
+     * （2）scope：webclient
+     * （3）username：john.carnell
+     * （4）password：password1
      *
-     * 现在，你有一个有效的 OAuth2 访问令牌，可以使用你在你的认证服务中创建的 /auth/user 端点，来检索与令牌
-     * 相关的用户信息。后续将要被保护资源的任何服务都将调用身份验证服务的/auth/user 端点来验证令牌并检索用户
-     * 信息。
+     * 如下是从 /auth/oauth/token 调用返回的 JSON 净荷。
      *
-     * 调用 /auth/user 端点时，注意 OAuth2 访问令牌是如何作为 HTTP 头传递的。
+     * {
+     *     "access_token": "e9decabc-165b-4677-9190-2e0bf8341e0b",
+     *     "token_type": "bearer",
+     *     "refresh_token": "22d5225d-c346-4bcd-82ec-82095a355bc5",
+     *     "expires_in": 42040,
+     *     "scope": "webclient"
+     * }
      *
-     * 你以 GET 方式发出了对 /auth/user 端点的 HTTP 请求。然而，任何时候你需要通过 OAuth2 访问令牌，调用
-     * 一个受 OAuth2 保护的端点（包括 OAuth2 端点 /auth/user）。要做到这一点，通常需要创建一个称为
-     * Authorization 的 HTTP 头，其值为 Bearer XXXXX（XXXXX 即为访问令牌）。传入的访问令牌 XXXXX 是在
-     * 你调用 /auth/oauth/token 端点时返回。
+     * 返回的净荷包含以下五个属性。
+     * （1）access_token：OAuth2 令牌，它将随用户对受保护资源的每个服务调用一起出示。
+     * （2）token_type：令牌的类型。OAuth2 规范允许定义多个令牌类型，最常用的令牌类型是
+     * 不记名令牌（bearer token）。
+     * （3）refresh_token：包含一个可以提交回 OAuth2 服务器的令牌，以便在访问令牌过期
+     * 后重新颁发一个访问令牌。
+     * （4）expires_in：这是 OAuth2 访问令牌过期前的秒数。在 Spring 中，授权令牌过期
+     * 的默认值是 12 h。
+     * （5）scope：此 OAuth2 令牌的有效作用域。
      *
-     * 如果 OAuth2 访问令牌是有效的，/auth/user 端点将返回关于用户的信息，包括分配给他们的角色。
+     * 有了有效的 OAuth2 访问令牌，就可以使用验证服务中创建的 /auth/user 端点来检索与令牌相关联的用户的信息了。
+     * 后续所有受保护资源都将调用验证服务的 /auth/user 端点来确认令牌并检索用户信息。
      *
-     * 注意：Spring 将前缀 ROLE_ 分配给用户的角色，所以 ROLE_USER 意味着 john.carnell 具有 USER 角色。
+     * PS：调用 /auth/user 端点时，要注意 OAuth2 访问令牌是如何作为 HTTP 首部传入的。
+     *
+     * 对 /auth/user 端点发出 HTTP GET 请求。在任何时候调用 OAuth2 保护的端点（包括 OAuth2 的 /auth/user
+     * 端点），都需要传递 OAuth2 访问令牌。为此，要始终创建一个名为 Authorization 的 HTTP 首部，并附有 Bearer
+     * XXXXX 的值。比如，在这次调用中，HTTP 首部的值是 Bearer e9decabc-165b-4677-9190-2e0bf8341e0b。传入
+     * 的访问令牌是之前调用 /auth/oauth/token 端点时返回的访问令牌。
+     *
+     * 如果 OAuth2 访问令牌有效，/auth/user 端点就会返回关于用户的信息，包括分配给他们的角色。例如，从 /auth
+     * /user 调用返回的结果可以看出，用户 john.carnell 拥有 USER 角色。
+     *
+     * 注意：Spring 将前缀 ROLE_ 分配给用户角色，因此 ROLE_USER 意味着 john.carnell 拥有 USER 角色。
      */
     public static void main(String[] args) {
 

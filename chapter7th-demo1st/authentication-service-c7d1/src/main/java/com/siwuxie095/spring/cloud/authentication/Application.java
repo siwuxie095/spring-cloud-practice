@@ -20,17 +20,17 @@ import java.util.Map;
 @SpringBootApplication
 @RestController
 @EnableResourceServer
+// 用于告诉 Spring Cloud，该服务将作为 OAuth2 服务
 @EnableAuthorizationServer
 public class Application {
 
-    @RequestMapping(value = { "/user" }, produces = "application/json")
+    @RequestMapping(value = {"/user"}, produces = "application/json")
     public Map<String, Object> user(OAuth2Authentication user) {
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("user", user.getUserAuthentication().getPrincipal());
         userInfo.put("authorities", AuthorityUtils.authorityListToSet(user.getUserAuthentication().getAuthorities()));
         return userInfo;
     }
-
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
