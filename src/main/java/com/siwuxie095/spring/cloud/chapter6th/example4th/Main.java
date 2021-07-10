@@ -9,214 +9,242 @@ public class Main {
     /**
      * 在 Zuul 中配置路由
      *
-     * Zuul 本质上是一个反向代理。反向代理是介于客户端试图到达资源和资源本身之间的中间服务器。客户端甚至不知道
-     * 它与代理以外的服务器通信。反向代理负责捕获客户端的请求，然后以客户端的名义调用进程资源。
+     * Zuul 的核心是一个反向代理。反向代理是一个中间服务器，它位于尝试访问资源的客户端和资源本身之间。客户端甚至不知道
+     * 它正与代理之外的服务器进行通信。反向代理负责捕获客户端的请求，然后代表客户端调用远程资源。
      *
-     * 在一个微服务架构的情况下，Zuul（反向代理）以微服务调用从客户端转发到下游服务。服务客户端认为它只与 Zuul
-     * 通信。对于 Zuul 与下游客户端通信，Zuul 已经知道如何将传入的调用映射到下游路由。Zuul 有这样几种机制，
-     * 包括：
-     * （1）通过服务发现自动映射路由
-     * （2）通过服务发现手动映射路由
-     * （3）使用静态 URL 手动映射路由
+     * 在微服务架构的情况下，Zuul（反向代理）从客户端接收微服务调用并将其转发给下游服务。服务客户端认为它只与 Zuul 通
+     * 信。Zuul 要与下游服务进行沟通，Zuul 必须知道如何将进来的调用映射到下游路由。Zuul 有几种机制来做到这一点，包括：
+     * （1）通过服务发现自动映射路由；
+     * （2）使用服务发现手动映射路由；
+     * （3）使用静态 URL 手动映射路由。
      *
      *
      *
      * 1、通过服务发现自动映射路由
      *
-     * Zuul 所有路由映射通过 application.yml 文件定义。然而，Zuul 可以基于零配置服务 ID 自动路由请求。如果
-     * 你不指定任何路由，Zuul 将自动使用被调用服务的 Eureka 服务 ID 和将它映射到下游服务实例。例如，如果你想
-     * 调用你的组织服务和通过 Zuul 使用自动路由，你将会有你的客户端调用 Zuul 服务实例，使用下面的 URL 作为端
-     * 点：
+     * Zuul 的所有路由映射都是通过在 application.yml 文件中定义路由来完成的。但是，Zuul 可以根据其服务 ID 自动路由
+     * 请求，而不需要配置。如果没有指定任何路由，Zuul 将自动使用正在调用的服务的 Eureka 服务 ID，并将其映射到下游服务
+     * 实例。例如，如果要调用 organizationservice 并通过 Zuul 使用自动路由，则可以使用以下 URL 作为端点，让客户端
+     * 调用 Zuul 服务实例：
      *
-     * http://localhost:5555/organizationservice/v1/organizations/e254f8c-c442-4ebea82a-e2fc1d1ff78a
+     * http://localhost:5555/organizationservice/v1/organizations/e254f8c-c442-4ebe-a82a-e2fc1d1ff78a
      *
-     * 通过 http://localhost:5555 访问你的 Zuul 服务器。你试图调用的服务（organizationservice）由服务中
-     * 端点路径的第一部分表示。
+     * Zuul 服务器可通过 http://localhost:5555 进行访问，如：
      *
-     * Zuul 将使用 organizationservice 应用程序名称来映射到组织服务实例的请求。即：
-     * （1）服务名称充当服务网关查找服务的物理位置的键。
-     * （2）路径的其余部分是将调用的实际 URL 端点。
+     * http://localhost:5555/organizationservice/v1/organizations/
      *
-     * 使用带 Eureka 的 Zuul 的优点是，你不仅现在有一个单一的，你可以调用的端点，使用 Eureka，你还可以添加和
-     * 删除一个服务实例而不必修改 Zuul。例如，你可以添加一个新的服务到 Eureka，Zuul 将自动路由到它因为它与
-     * Eureka 通信，Eureka 知道实际物理服务端点位于何处。
+     * 该服务中的端点路径的第一部分表示正在尝试调用的服务（organizationservice）。如下阐明了该映射的实际操作。
+     * （1）organizationservice：服务名称充当服务网关查找服务物理位置的键。
+     * （2）v1/organizations：路径的其余部分是将要调用的实际 URL 端点。
      *
-     * 如果你想看到路由被 Zuul 服务器管理，你可以通过在 Zuul 服务器上的 /routes 端点访问该路由。这将返回服务
-     * 上所有映射的列表。可以点击 http://localhost:5555/route 来查看输出。
+     * PS：Zuul 将使用 organizationservice 应用程序名称来将请求映射到组织服务实例。
      *
-     * 映射在 Eureka 的每个服务现在将被映射为一个 Zuul 路由。分为双向的两部分：
-     * （1）基于 Eureka 服务 ID 自动创建 Zuul 服务路由。
-     * （2）路由映射到 Eureka 服务 ID。
+     * 使用带有 Eureka 的 Zuul 的优点在于，开发人员不仅可以拥有一个可以发出调用的单个端点，有了 Eureka，开发人员还可
+     * 以添加和删除服务的实例，而无须修改 Zuul。例如，可以向 Eureka 添加新服务，Zuul 将自动路由到该服务，因为 Zuul
+     * 会与 Eureka 进行通信，了解实际服务端点的位置。
+     *
+     * 如果要查看由 Zuul 服务器管理的路由，可以通过 Zuul 服务器上的 /routes 端点来访问这些路由，这将返回服务中所有
+     * 映射的列表（可访问 http://localhost:5555/routes）。
+     *
+     * 从输出结果可知，通过 Zuul 注册的服务的映射展示在从 /route 调用返回的 JSON 体的左边，路由映射到的实际 Eureka
+     * 服务 ID 展示在其右边。其中：
+     * （1）左边：Zuul 中的服务路由是基于 Eureka 的服务 ID 自动创建的。
+     * （2）右边：路由所映射的 Eureka 服务 ID。
+     *
+     * PS：在 Eureka 中映射的每个服务现在都将被映射为 Zuul 路由。
      *
      *
      *
-     * 2、通过服务发现手动映射路由
+     * 2、使用服务发现手动映射路由
      *
-     * Zuul 允许你通过明确的定义路由映射来定义更细粒度的路由，而不仅仅是依靠自动路由服务创建服务的 Eureka 服务
-     * ID。假如你想通过缩短组织的名字而不是你的组织服务通过默认路由 /organizationservice/v1/organizations
-     * /{organizationid} 访问 Zuul 来简化路由。你可以通过在 application.yml 文件中手动定义路由映射：
+     * Zuul 允许开发人员更细粒度地明确定义路由映射，而不是单纯依赖服务的 Eureka 服务 ID 创建的自动路由。
+     *
+     * 假设开发人员希望通过缩短组织名称来简化路由，而不是通过默认路由 /organizationservice/v1/organizations
+     * /{organization-id} 在 Zuul 中访问组织服务。开发人员可以通过在 application.yml 中手动定义路由映射来
+     * 做到这一点。
      *
      * zuul:
      *   routes:
      *     organizationservice: /organization/**
      *
-     * 通过添加此配置，你现在可以通过点击 /organization/v1/organizations/{organization-id} 路由来访问组
-     * 织服务。如果你再检查 Zuul 服务器的端点（http://localhost:5555/route），可以看到其中包含的组织服务的
-     * 自定义路由。
+     * 通过添加上述配置，现在就可以通过访问 /organization/v1/organizations/{organization-id} 路由来访问
+     * 组织服务了。如果再次检查 Zuul 服务器的端点，会注意到有两个条目代表组织服务。
      *
-     * 如果仔细查看，你会发现组织服务中有两个条目。第一个服务入口是你定义的 application.yml 文件的映射：
-     * "organization/**": "organizationservice"。第二个服务入口是通过 Zuul 创建基于组织服务的
-     * Eureka ID 的自动映射："/organizationservice/**": "organizationservice"。
+     * 第一个服务条目是在 application.yml 文件中定义的映射，如下：
      *
-     * 注意：当你使用自动路由映射在 Zuul 暴露完全基于 Eureka 服务 ID 的服务，如果没有服务实例在运行，Zuul 不
-     * 会暴露服务路由。然而，如果你手动映射路由到服务发现 ID 且没有实例在 Eureka 注册，Zuul 将仍然显示该路由。
-     * 如果你尝试调用不存在的服务路由，Zuul 会返回一个 500 错误。
+     * "organization/**": "organizationservice"
      *
-     * 如果你想排除 Eureka 服务 ID 路由的自动映射和你已定义的可用的组织服务路由，你可以添加一个额外的 Zuul 参
-     * 数到你的 application.yml 文件，称为 ignored-services。下面的代码片段显示了 ignored-services 属性
-     * 可以用来排除通过 Zuul 自动映射的 Eureka 服务 ID "organizationservice"。
+     * 第二个服务条目是由 Zuul 根据组织服务的 Eureka ID 创建的自动映射：
+     *
+     * "/organizationservice/**":"organizationservice"
+     *
+     * 注意：在使用自动路由映射时，Zuul 只基于 Eureka 服务 ID 来公开服务，如果服务的实例没有在运行，
+     * Zuul 将不会公开该服务的路由。然而，如果在没有使用 Eureka 注册服务实例的情况下，手动将路由映射
+     * 到服务发现 ID，那么 Zuul 仍然会显示这条路由。如果尝试为不存在的服务调用路由，Zuul 将返回 500
+     * 错误。
+     *
+     * 如果想要排除 Eureka 服务 ID 路由的自动映射，只提供自定义的组织服务路由，可以向 application.yml 文件
+     * 添加一个额外的 Zuul 参数 ignored-services。如下代码展示了如何使用 ignored-services 属性从 Zuul
+     * 完成的自动映射中排除 Eureka 服务 ID organizationservice。
      *
      * zuul:
      *   ignored-services: 'organizationservice'
      *   routes:
      *     organizationservice: /organization/**
      *
-     * 现在仅有一个组织服务定义在 Zuul。
+     * ignored-services 属性允许开发人员定义想要从注册中排除的 Eureka 服务 ID 的列表，该列表以逗号进行分隔。
+     * 现在，再调用 /routes 端点时，应该只能看到自定义的组织服务映射。
      *
-     * ignored-services 属性允许你定义一个以逗号分隔的 Eureka 服务 ID 列表，你希望将其排除在注册之外。现在，
-     * 当你调用 Zuul 的 /routes 端点，你只能看到你定义的组织服务映射。
+     * 如果要排除所有基于 Eureka 的路由，可以将 ignored-services 属性设置为 "*"。
      *
-     * 如果你想排除所有基于 Eureka 的路由，可以将 ignored-services 属性设置为 "*"。
+     * 服务网关的一种常见模式是通过使用 /api 之类的标记来为所有的服务调用添加前缀，从而区分 API 路由与内容路由。
+     * Zuul 通过在 Zuul 配置中使用 prefix 属性来支持这项功能。如下在概念上勾画了这种映射前缀的样子。
      *
-     * 区分服务网关 API 路由与内容路由的一个帯见的模式是通过使用一类标签的所有服务调用前缀，如：/api，来区别。
-     * Zuul 通过在 Zuul 配置中使用前缀属性支持上述情况。
+     * http://localhost:5555/api/organization/v1/organizations/
      *
-     * 使用前缀，Zuul 将映射 /api 前缀到每个它管理的服务。在下面的代码中，将看到如何为你的组织服务和许可服务设
-     * 置特定的路由，排除所有 Eureka 生成的服务，并用 /api 前缀作为服务的前缀。
+     * 其中：
+     * （1）api：让 /api 路由前缀紧接着服务的简化名称所组成的路由并不少见。
+     * （2）organization：这里已经将服务映射到名称 "organization"。
+     *
+     * PS：通过使用前缀，Zuul 会将 /api 前缀映射到它管理的每个服务。
+     *
+     * 在如下代码中，将看到如何分别为组织服务和许可证服务建立特定的路由，排除所有 Eureka 生成的服务，并使用
+     * /api 前缀为服务添加前缀。
      *
      * zuul:
-     *   ignored-services: '*'
-     *   prefix:  /api
+     *   ignored-services: '*'　　⇽---　ignored-services 被设置为 *，以排除所有基于 Eureka 服务 ID
+     *                                 的路由的注册
+     *   prefix: /api　　⇽---　所有已定义的服务都将添加前缀 /api
      *   routes:
-     *     organizationservice: /organization/**
+     *     organizationservice: /organization/**　　⇽---　organizationservice 和 licensingservice
+     *                                                   分别映射到 organization 和 licensing
      *     licensingservice: /licensing/**
      *
-     * 一旦配置完成，Zuul 服务已经重新加载，当点击 /route 端点时你应该看到这样两项：/api/organization 和
-     * /api/licensing。
+     * 完成此配置并重新加载 Zuul 服务后，访问 /routes 端点时应该会看到以下两个条目：
+     * （1）/api/organization
+     * （2）/api/licensing
      *
-     * 下面来看看如何使用 Zuul 映射到静态 URL。静态 URL 是指向服务但没有在 Eureka 服务发现引擎注册的 URL。
+     * 下面来看看如何使用 Zuul 来映射到静态 URL。静态 URL 是指向未通过 Eureka 服务发现引擎注册的服务的 URL。
      *
      *
      *
      * 3、使用静态 URL 手动映射路由
      *
-     * Zuul 可用于路由服务，但它不受 Eureka 管理。在这些情况下，Zuul 可建立直接路由到一个静态定义的 URL。例如，
-     * 假设你的许可服务是用 Python 写的，你还想通过 Zuul 代理。你会在下面的代码使用 Zuul 配置来实现这一需求。
+     * Zuul 可以用来路由那些不受 Eureka 管理的服务。在这种情况下，可以建立 Zuul 直接路由到一个静态定义的 URL。例如，
+     * 假设许可证服务是用 Python 编写的，并且仍然希望通过 Zuul 进行代理，那么可以使用如下代码中的 Zuul 配置来达到此
+     * 目的。
+     *
+     * zuul:
+     *  routes:
+     *    licensestatic:　　⇽---　Zuul 用于在内部识别服务的关键字
+     *      path: /licensestatic/**　　⇽---　许可证服务的静态路由
+     *      url: http://licenseservice-static:8081　　⇽---　已建立许可证服务的静态实例，它将被直接调用，而不是
+     *                                                     由 Zuul 通过 Eureka 调用
+     *
+     * 完成这一配置更改后，就可以访问 /routes 端点来看添加到 Zuul 的静态路由。输出结果中包含：
+     *
+     * "/api/licensestatic/**": "http://licenseservice-static:8081"
+     *
+     * 现在，licensestatic 端点不再使用 Eureka，而是直接将请求路由到 http://licenseservice-static:8081 端点。
+     * 这里存在一个问题，那就是通过绕过 Eureka，只有一条路径可以用来指向请求。幸运的是，开发人员可以手动配置 Zuul
+     * 来禁用 Ribbon 与 Eureka 集成，然后列出 Ribbon 将进行负载均衡的各个服务实例。如下代码展示了这一点。
      *
      * zuul:
      *   routes:
      *     licensestatic:
      *       path: /licensestatic/**
-     *       url: http://licenseservice-static:8081
-     *
-     * 你现在已经映射一个静态路由到许可服务。你可以点击 /routes 端点，并看到已增加到 Zuul 的静态路由。
-     *
-     * 在这一点上，licensestatic 端点不使用 Eureka 并且直接路由请求到 http://licenseservice-static:8081
-     * 端点。问题是通过绕过 Eureka，你只能有一个指向请求的路由。幸运的是，你可以手动配置 Zuul 禁用 Ribbon 与
-     * Eureka 整合，然后列出 Ribbon 将负载均衡每个服务实例。下面的清单显示了这一点。
-     *
-     * zuul:
-     *   routes:
-     *     licensestatic:
-     *      path: /licensestatic/**
-     *      serviceId: licensestatic
+     *       serviceId: licensestatic　　⇽---　定义一个服务 ID，该服务 ID 将用于在 Ribbon 中查找服务
      * ribbon:
      *   eureka:
-     *     enabled: false
+     *     enabled: false　　⇽---　在 Ribbon 中禁用 Eureka 支持
      * licensestatic:
      *   ribbon:
-     *     listOfServers: http://licenseservice-static1:8081, http://licenseservice-static2:8082
+     *     listOfServers: http://licenseservice-static1:8081,
+     *       http://licenseservice-static2:8082　　⇽---　指定请求会路由到的服务器列表
      *
-     * 一旦配置完成，对 /routes 端点的调用现在显示 /api/licensestatic 路由已经被映射到一个称为 licensestatic
-     * 的服务 ID。
+     * 配置完成后，调用 /routes 端点现在将显示 /api/licensestatic 路由已被映射到名为 licensestatic 的服务 ID。
+     * 输入结果中包含：
+     *
+     * "/api/licensestatic/**": "licensestatic"
+     *
      *
      * PS：处理非 JVM 服务
      *
-     * 静态路由映射的问题和在 Ribbon 中禁用 Eureka 支持，将禁用通过 Zuul 服务网关的所有服务的 Ribbon 支持。
-     * 这意味着更多的负载将被放置在你的 Eureka 服务器，因为 Zuul 不能使用 Ribbon 缓存查找服务。记住，Ribbon
-     * 不会每次都调用 Eureka。相反，它在本地缓存服务实例的位置，然后定期对 Eureka 的更改进行检查。在 Ribbon
-     * 缺席的情况下，Zuul 将每次调用 Eureka 来解析服务的位置。
+     * 静态映射路由并在 Ribbon 中禁用 Eureka 支持会造成一个问题，那就是禁用了对通过 Zuul 服务网关
+     * 运行的所有服务的 Ribbon 支持。这意味着 Eureka 服务器将承受更多的负载，因为 Zuul 无法使用
+     * Ribbon 来缓存服务的查找。记住，Ribbon 不会在每次发出调用的时候都调用 Eureka。相反，它将在
+     * 本地缓存服务实例的位置，然后定期检查 Eureka 是否有变化。缺少了 Ribbon，Zuul 每次需要解析服
+     * 务的位置时都会调用 Eureka。
      *
-     * 之前谈到了如何使用多个服务网关，根据所调用的服务类型，将执行不同的路由规则和策略。非 JVM 的应用程序，你
-     * 可以建立一个单独的 Zuul 服务器来处理这些路由。然而，与非基于 JVM 的语言，你最好设置一个 Spring Cloud
-     * "Sidecar" 实例。Spring Cloud sidecar 让你使用 Eureka 实例注册非 JVM 服务，然后通过 Zuul 代理它们。
-     * 这里没有涵盖 Spring Sidecar，因为你没有写任何非 JVM 服务，但是设置 Sidecar 实例非常容易。
+     * 之前讨论了如何使用多个服务网关，根据所调用的服务类型来执行不同的路由规则和策略。对于非 JVM 应
+     * 用程序，可以建立单独的 Zuul 服务器来处理这些路由。然而，对于非基于 JVM 的语言，最好是建立一
+     * 个 Spring Cloud "Sidecar" 实例。Spring Cloud Sidecar 允许开发人员使用 Eureka 实例注册
+     * 非 JVM 服务，然后通过 Zuul 进行代理。
      *
      *
      *
      * 4、动态重新加载路由配置
      *
-     * 下面来看看在在 Zuul 配置路由的下一件事是如何动态重新加载路由。动态重新加载路由的能力非常有用，因为它允许
-     * 你改变路由的映射而不必回收 Zuul 服务器。现有的路由可以被快速修改，并通过你的环境中的每个 Zuul 服务器的
-     * 回收行为添加新的路由。之前讨论了如何使用 Spring Cloud 配置服务来呈现微服务配置数据。你可以使用 Spring
-     * Cloud 配置呈现 Zuul 路由。在 EagleEye 的例子，你可以在你的配置仓库创建一个称为 zuulservice 的新的应
-     * 用程序文件夹。像你的组织服务和许可服务，你将创建三个文件: zuulservice.yml， zuulservicedev.yml 和
-     * zuulservice-prod.yml，它们将保存你的路由配置。
+     * 接下来要在 Zuul 中配置路由来看看如何动态重新加载路由。动态重新加载路由的功能非常有用，因为它允许在不回收 Zuul
+     * 服务器的情况下更改路由的映射。现有的路由可以被快速修改，以及添加新的路由，都无需在环境中回收每个 Zuul 服务器。
+     * 之前如何使用 Spring Cloud 配置服务来外部化微服务配置数据。可以使用 Spring Cloud Config 来外部化 Zuul 路
+     * 由。在 EagleEye 示例中，可以在 config-repo 创建一个名为 zuulservice 的新应用程序文件夹。就像组织服务和许
+     * 可证服务一样，这里将创建三个文件（即 zuulservice.yml、zuulservice-dev.yml 和 zuulservice-prod.yml），
+     * 它们将保存路由配置。
      *
-     * PS：配置仓库：http://github.com/carnellj/config-repo
+     * PS：config-repo 链接：https://github.com/carnellj/config-repo
      *
-     * 为了与之前配置中的示例一致，这里更改了路由格式，将其从分层格式调整到 "." 格式。初始路由配置中只有一个条目：
+     * 为了与之前配置中的示例保持一致，这里已经将路由格式从层次化格式更改为 "." 格式。初始的路由配置将包含一个条目：
      *
      * zuul.prefix=/api
      *
-     * 如果你点击 /routes 端点，你应该看到当前显示在 Zuul，用 /api 作为前缀的所有基于 Eureka 的服务。现在，
-     * 如果你想立即添加新的路由映射，你只需对配置文件进行更改，然后将它们提交给 Git 仓库，其中 Spring Cloud
-     * 配置正在从配置数据库中提取配置数据。例如，如果你想禁用所有基于 Eureka 服务注册并且只暴露两个路由（组织
-     * 服务和许可服务），你可以像这样修改 zuulservice-*.yml 文件：
+     * 如果访问 /routes 端点，应该会看到在 Zuul 中显示的所有基于 Eureka 的服务，并带有 /api 的前缀。现在，如果想
+     * 要动态地添加新的路由映射，只需对配置文件进行更改，然后将配置文件提交回 Spring Cloud Config 从中提取配置数据
+     * 的 Git 存储库。例如，如果想要禁用所有基于 Eureka 的服务注册，并且只公开两个路由（一个用于组织服务，另一个用
+     * 于许可证服务），则可以修改 zuulservice-*.yml 文件，如下所示：
      *
      * zuul.ignored-services: '*'
      * zuul.prefix: /api
      * zuul.routes.organizationservice: /organization/**
      * zuul.routes.organizationservice: /licensing/**
      *
-     * 然后你可以向 GitHub 提交修改。Zuul 以 POST 方式暴露 /refresh 端点路由，该端点会重新加载其路由的配置。
-     * 一旦这个 /refresh 被点击，如果你再点击 /routes 端点，你将会看到两个新的路由被暴露，并且所有基于 Eureka
-     * 的路由都消失了。
+     * 接下来，将更改提交给 GitHub。Zuul 公开了基于 POST 的端点路由 /refresh，其作用是让 Zuul 重新加载路由配置。
+     * 在访问完 refresh 端点之后，如果访问 /routes 端点，就会看到两条新的路由，所有基于 Eureka 的路由都不见了。
      *
      *
      *
      * 5、Zuul 和服务超时
      *
-     * Zuul 使用 Netflix 的 Hystrix 和 Ribbon 库来帮助防止长时间运行的服务调用影响服务网关的性能。默认情况
-     * 下，如果任何调用处理一次请求需要消耗超过 1 秒（Hystrix 的默认值），Zuul 将中断调用并返回 HTTP 500 错
-     * 误。幸运的是，你可以通过在 Zuul 服务器的配置中设置 Hystrix 超时属性来配置这样的行为。
+     * Zuul 使用 Netflix 的 Hystrix 和 Ribbon 库，来帮助防止长时间运行的服务调用影响服务网关的性能。在默认情况下，
+     * 对于任何需要用超过 1 s 的时间（这是 Hystrix 默认值）来处理请求的调用，Zuul 将终止并返回一个 HTTP 500 错误。
+     * 幸运的是，开发人员可以通过在 Zuul 服务器的配置中设置 Hystrix 超时属性来配置此行为。
      *
-     * 为经过 Zuul 的所有服务设置 Hystrix 超时时间，你可以使用 hystrix.command.default.execution
-     * .isolation.thread.timeoutInMilliseconds 属性。例如，如果你想设置默认 Hystrix 时间为 2.5
-     * 秒，你可以在你的 Zuul 的 Spring Cloud 配置文件使用以下配置：
+     * 开发人员可以使用 hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds 属性来为
+     * 所有通过 Zuul 运行的服务设置 Hystrix 超时。例如，如果要将默认的 Hystrix 超时设置为 2.5 s，就可以在 Zuul
+     * 的 Spring Cloud 配置文件中使用以下配置：
      *
-     * zuul.prefix: /api
+     * zuul.prefix:  /api
      * zuul.routes.organizationservice: /organization/**
      * zuul.routes.licensingservice: /licensing/**
      * zuul.debug.request: true
      * hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 2500
      *
-     * 如果需要为特定服务设置 Hystrix 超时，则可以使用你想要覆盖的超时时间，替换服务的 Eureka 服务 ID 名称属
-     * 性的默认部分。例如，如果你想修改仅有 licensingservice 的超时时间为 3 秒，并且让其它剩余的服务使用默认
-     * Hystrix 超时时间，你可以使用这样的配置：
+     * 如果需要为特定服务设置 Hystrix 超时，可以使用需要覆盖超时的服务的 Eureka 服务 ID 名称来替换属性的 default
+     * 部分。例如，如果想要将 licensingservice 的超时更改为 3 s，并让其他服务使用默认的 Hystrix 超时，可以在配置
+     * 中添加与下面类似的内容：
      *
      * hystrix.command.licensingservice.execution.isolation.thread.timeoutInMilliseconds: 3000
      *
-     * 最后，你需要知道另一个超时属性。虽然你已经覆盖了 Hystrix 超时时间，但 Netflix 的 Ribbon 对任何耗时超
-     * 过 5 秒的调用也会超时。
+     * 最后，还需知晓另外一个超时属性。
      *
-     * 强烈建议你重新审视任何耗时超过 5 秒的调用的设计，你可以通过设置以下属性覆盖 Ribbon 超时时间：
-     * servicename.ribbon.ReadTimeout。例如，如果你想覆盖 licensingservice 的超时时间为 7 秒，
-     * 你会使用以下配置：
+     * 虽然已经覆盖了 Hystrix 的超时，Netflix Ribbon 同样会超时任何超过 5 s 的调用。尽管这里强烈建议重新审视调用
+     * 时间超过 5 s 的调用的设计，但可以通过设置属性 servicename.ribbon.ReadTimeout 来覆盖 Ribbon 超时。例如，
+     * 如果想要覆盖 licensingservice 超时时间为 7 s，可以使用以下配置：
+     *
      * hystrix.command.licensingservice.execution.isolation.thread.timeoutInMilliseconds: 7000
      * licensingservice.ribbon.ReadTimeout: 7000
      *
-     * 注意：配置的时间超过 5 秒，你必须同时设置 Hystrix 和 Ribbon 的超时时间。
+     * 注意：对于超过 5 s 的配置，必须同时设置 Hystrix 和 Ribbon 超时。
      */
     public static void main(String[] args) {
 
