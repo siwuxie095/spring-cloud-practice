@@ -48,5 +48,6 @@ public class JWTTokenStoreConfig {
     public TokenEnhancer jwtTokenEnhancer() {
         return new JWTTokenEnhancer();
     }
+
 }
 

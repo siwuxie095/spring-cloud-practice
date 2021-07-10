@@ -8,36 +8,38 @@ package com.siwuxie095.spring.cloud.chapter7th.example5th;
 public class Main {
 
     /**
-     * JavaScript Web Tokens 和 OAuth2
+     * JSON Web Token 与 OAuth2
      *
-     * OAuth2 一个基于令牌的认证框架，但具有讽刺意味的是，它没有提供任何标准来定义其规范中的令牌。为了改进
-     * OAuth2 令牌的不足，一个称为 JavaScript Web Tokens（JWT）的新标准出现了。JWT 是一个由互联网工程
-     * 任务组（IETF）提出的开放标准（RFC-7519），试图为 OAuth2 令牌提供标准的结构。JWT 令牌是：
-     * （1）小：JWT 令牌以 Base64 方式编码，可以很容易地通过一个 URL，HTTP 头或 HTTP POST 参数传递。
-     * （2）加密的签名：JWT 令牌由发出它的认证服务器签名。这意味着可以保证令牌没有被篡改。
-     * （3）自包含的：因为一个 JWT 令牌被加密签名，接收服务的微服务可以保证令牌的内容是有效的。没有必要回
-     * 调认证服务来验证令牌的内容，因为令牌的签名可以验证，而内容（如令牌到期时间呾用户信息）可以通过接收
-     * 的微服务检验。
-     * （4）可扩展：当认证服务生成令牌时，它可以在令牌被密封之前在令牌中放置附加信息。接收服务可以解密令牌
-     * 有效负载并从中检索附加的上下文。
+     * OAuth2 是一个基于令牌的验证框架，但具有讽刺意味的是，它并没有为如何定义其规范中的令牌提供任何标准。为了矫正
+     * OAuth2 令牌标准的缺陷，一个名为 JSON Web Token（JWT）的新标准脱颖而出。JWT 是因特网工程任务组（Internet
+     * Engineering Task Force，IETF）提出的开放标准（RFC-7519），旨在为 OAuth2 令牌提供标准结构。JWT 令牌具
+     * 有如下特点。
+     * （1）小巧：JWT 令牌编码为 Base64，可以通过 URL、HTTP 首部或 HTTP POST 参数轻松传递。
+     * （2）密码签名：JWT 令牌由颁发它的验证服务器签名。这意味着可以保证令牌没有被篡改。
+     * （3）自包含：由于 JWT 令牌是密码签名的，接收该服务的微服务可以保证令牌的内容是有效的，因此，不需要调用验证
+     * 服务来确认令牌的内容，因为令牌的签名可以被接收微服务确认，并且内容（如令牌和用户信息的过期时间）可以被接收
+     * 微服务检查。
+     * （4）可扩展：当验证服务生成一个令牌时，它可以在令牌被密封之前在令牌中放置额外的信息。接收服务可以解密令牌净
+     * 荷，并从它里面检索额外的上下文。
      *
-     * Spring Cloud Security 支持 JWT 开箱即用。但是，要使用和消费 JWT 令牌，必须使用不同的方式配置认
-     * 证服务和受认证服务保护的服务。配置并不难，下面来看看更改。
+     * Spring Cloud Security 为 JWT 提供了开箱即用的支持。但是，要使用和消费 JWT 令牌，OAuth2 验证服务和受验
+     * 证服务保护的服务必须以不同的方式配置。这个配置并不困难，下面来看一下不一样的地方。
      *
      *
      *
-     * 1、修改认证服务来发布 JavaScript Web Tokens
+     * 1、修改验证服务以颁发 JWT 令牌
      *
-     * 对于认证服务和将受 OAuth2 保护的两个微服务（许可和组织服务），你将需要向它们的 Maven pom.xml 文件
-     * 添加 Spring Security 依赖来包括 JWT OAuth2 库。这个新依赖是：
+     * 对于要受 OAuth2 保护的验证服务和两个微服务（许可证服务和组织服务），需要在它们的 Maven pom.xml 文件中添加
+     * 一个新的 Spring Security 依赖项，以包含 JWT OAuth2 库。这个新的依赖项是：
      *
-     *         <dependency>
-     *             <groupId>org.springframework.security</groupId>
-     *             <artifactId>spring-security-jwt</artifactId>
-     *         </dependency>
+     * <dependency>
+     *   <groupId>org.springframework.security</groupId>
+     *   <artifactId>spring-security-jwt</artifactId>
+     * </dependency>
      *
-     * 在加入 Maven 依赖后，首先你需要告诉你的认证服务如何生成和解析 JWT 令牌。要做到这一点，你要为认证服
-     * 务创建一个称为 JWTTokenStoreConfig 的新配置类。如下所示。
+     * 添加完 Maven 依赖项之后，需要先告诉验证服务如何生成和翻译 JWT 令牌。
+     *
+     * 为此，将要在验证服务中创建一个名为 JWTTokenStoreConfig 的新配置类。如下所示。
      *
      * @Configuration
      * public class JWTTokenStoreConfig {
@@ -50,7 +52,10 @@ public class Main {
      *         return new JwtTokenStore(jwtAccessTokenConverter());
      *     }
      *
+     *     // 用于从出示给服务的令牌中读取数据
      *     @Bean
+     *     // @Primary 注解用于告诉 Spring，如果有多个特定类型的 bean（在本例中是 DefaultTokenService），
+     *     // 那么就使用被 @Primary 标注的 bean 类型进行自动注入
      *     @Primary
      *     public DefaultTokenServices tokenServices() {
      *         DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
@@ -59,10 +64,11 @@ public class Main {
      *         return defaultTokenServices;
      *     }
      *
-     *
+     *     // 在 JWT 和 OAuth2 服务器之间充当翻译
      *     @Bean
      *     public JwtAccessTokenConverter jwtAccessTokenConverter() {
      *         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+     *         // 定义将用于签署令牌的签名密钥
      *         converter.setSigningKey(serviceConfig.getJwtSigningKey());
      *         return converter;
      *     }
@@ -71,28 +77,27 @@ public class Main {
      *     public TokenEnhancer jwtTokenEnhancer() {
      *         return new JWTTokenEnhancer();
      *     }
+     *
      * }
      *
-     * JWTTokenStoreConfig 类用于定义 Spring 将如何管理 JWT 令牌的创建、签名和转换。
+     * JWTTokenStoreConfig 类用于定义 Spring 将如何管理 JWT 令牌的创建、签名和翻译。因为 tokenServices() 将
+     * 使用 Spring Security 的默认令牌服务实现，所以这里的工作是固定的。
      *
-     * tokenServices() 方法将使用 Spring Security 的默认令牌服务实现，所以这里的工作是死记硬背。
+     * 这里要关注的是 jwtAccessTokenConverter() 方法，它定义了令牌将如何被翻译。关于这个方法，需要注意的最重要的
+     * 一点是，其中正在设置将要用于签署令牌的签名密钥。
      *
-     * jwtAccessTokenConverter() 方法是这里想要关注的。它定义了令牌将如何被转换。关于这个方法要注意的最
-     * 重要的一点是，你将设置用于签名的签名密钥。
-     *
-     * 在这个例子中，你要使用一个对称密钥，这意味着认证服务和受认证服务保护的服务必须在所有服务之间共享相同
-     * 的密钥。密钥只不过是存储在认证服务 Spring Cloud Config 条目中的一个随机字符串值。签名密钥的实际
-     * 值是：
+     * 对于本例，将使用一个对称密钥，这意味着验证服务和受验证服务保护的服务必须要在所有服务之间共享相同的密钥。该密
+     * 钥只不过是存储在验证服务 Spring Cloud Config 条目中的随机字符串值。这个签名密钥的实际值是：
      *
      * signing.key: "345345fsdgsf5345"
      *
-     * 注意：Spring Cloud Security 支持使用公钥/私钥的对称密钥加密和非对称加密。这里不打算通过使用公钥
-     * /私钥来设置 JWT。不幸的是，JWT、Spring Security 和公钥/私钥只存在少量的正式文档。如果你对如何做
-     * 到这一点有兴趣，可以参考：https://www.baeldung.com/spring-security-oauth-jwt。
+     * 注意：Spring Cloud Security 支持对称密钥加密和使用公钥/私钥的非对称加密。这里不打算使用公钥/私钥创建 JWT。
+     * 遗憾的是，关于 JWT、Spring Security 和公私钥的文档很少。如果你对实现上面讨论的内容感兴趣，强烈建议你查看
+     * baeldung.com，它非常好地解释了 JWT 和公钥/私钥如何创建。
      *
-     * 在 JWTTokenStoreConfig 类中，定义了 JWT 令牌是如何被签名和创建的。现在需要将此挂钩到整个 OAuth2
-     * 服务中。之前你使用 OAuth2Config 类定义 OAuth2 服务的配置。你设置了将由你的服务使用的认证管理器，
-     * 以及应用程序名称和密钥。这里你将用一个称为 JWTOAuth2Config 的新类取代 OAuth2Config 类。如下所示。
+     * 在 JWTTokenStoreConfig 中，定义了如何创建和签名 JWT 令牌。现在，需要将它挂钩到整个 OAuth2 服务中。之前
+     * 使用 OAuth2Config 类来定义 OAuth2 服务的配置，并创建了用于服务的验证管理器，以及应用程序名称和密钥。接下
+     * 来，将使用一个名为 JWTOAuth2Config 的新类替换 OAuth2Config 类。如下所示。
      *
      * @Configuration
      * public class JWTOAuth2Config extends AuthorizationServerConfigurerAdapter {
@@ -115,60 +120,57 @@ public class Main {
      *     @Autowired
      *     private TokenEnhancer jwtTokenEnhancer;
      *
-     *
-     *
      *     @Override
      *     public void configure(AuthorizationServerEndpointsConfigurer endpoints)
      *     throws Exception {
      *         TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
      *         tokenEnhancerChain.setTokenEnhancers(
-     *         Arrays.asList(jwtTokenEnhancer, jwtAccessTokenConverter));
+     *                 Arrays.asList(jwtTokenEnhancer, jwtAccessTokenConverter));
      *
-     *         endpoints.tokenStore(tokenStore)                             //JWT
-     *                 .accessTokenConverter(jwtAccessTokenConverter)       //JWT
-     *                 .tokenEnhancer(tokenEnhancerChain)                   //JWT
+     *         // JWTTokenStoreConfig 中创建的令牌存储将在这里注入
+     *         endpoints.tokenStore(tokenStore)
+     *                 // 这是钩子，用于告诉 Spring Security OAuth2 代码使用 JWT
+     *                 .accessTokenConverter(jwtAccessTokenConverter)
      *                 .authenticationManager(authenticationManager)
      *                 .userDetailsService(userDetailsService);
      *     }
      *
-     *
-     *
      *     @Override
      *     public void configure(ClientDetailsServiceConfigurer clients)
      *     throws Exception {
-     *
      *         clients.inMemory()
      *                 .withClient("eagleeye")
      *                 .secret("thisissecret")
      *                 .authorizedGrantTypes("refresh_token", "password", "client_credentials")
      *                 .scopes("webclient", "mobileclient");
      *     }
+     *
      * }
      *
-     * 现在，如果你重建你的认证服务并重新启动它，你会看到一个返回的 JWT 令牌。
+     * 现在，如果重新构建验证服务并重新启动它，应该会返回一个基于 JWT 的令牌。
      *
-     * 实际的令牌本身不会直接返回为 JavaScript。相反，JavaScript 的报文体使用 Base64 编码进行编码。如果
-     * 你有兴趣看到 JWT 令牌的内容，可以使用在线的工具解码令牌。推荐使用一家名为 Stormpath 的公司的在线工
-     * 具：https://www.jsonwebtoken.io/（或 https://jwt.io/），是一个在线的解码器。
+     * 实际的令牌本身并不是直接作为 JSON 返回的。相反，JSON 体使用 Base64 进行了编码。如果你对 JWT 令牌的内容感
+     * 兴趣，可以使用在线工具来解码令牌。推荐使用一个叫 Stormpath 的公司的在线工具，这个工具是一个在线的 JWT 解
+     * 码器：https://www.jsonwebtoken.io/（或 https://jwt.io/）。
      *
-     * 注意:理解 JWT 令牌被签名，但没有加密是非常重要的。任何在线 JWT 工具都可以解码 JWT 令牌并公开其内容。
-     * 之所以提出这一点，是因为 JWT 规范允许扩展令牌并向令牌添加附加信息。在你的 JWT 令牌里，不要暴露敏感
-     * 或个人可识别信息（PII）。
+     * 注意：了解 JWT 令牌已签名但未加密非常重要。任何在线 JWT 工具都可以解码 JWT 令牌并公开其内容。之所以提到这
+     * 一点，是因为 JWT 规范允许开发人员扩展令牌，并向令牌添加额外的信息。不要在 JWT 令牌中暴露敏感信息或个人身份
+     * 信息（Personally Identifiable Information，PII）。
      *
      *
      *
-     * 2、在微服务中消费 JavaScript Web Tokens
+     * 2、在微服务中使用 JWT
      *
-     * 现在你的 OAuth2 认证服务创建 JWT 令牌。下一步是配置你的许可服务和组织服务以使用 JWT。这是一个需要你
-     * 做两件事的小事：
-     * （1）向许可服务和组织服务的 pom.xml 文件添加 spring-security-jwt 依赖。
-     * （2）在许可服务和组织服务中创建一个 JWTTokenStoreConfig 类。这个类与使用的认证服务几乎是完全相同的
-     * 类，具体可参考上面的类。
+     * 到目前为止，已经拥有了创建 JWT 令牌的 OAuth2 验证服务。下一步就是配置许可证服务和组织服务以使用 JWT。这很
+     * 简单，只需要做两件事。
+     * （1）将 spring-security-jwt 依赖项添加到许可证服务和组织服务的 pom.xml 文件。
+     * （2）在许可证服务和组织服务中创建 JWTTokenStoreConfig 类。这个类几乎与验证服务使用的类相同。
      *
-     * 你需要做最后一件工作。由于许可服务调用组织服务，所以需要确保 OAuth2 令牌被传递。这通常是通过
-     * OAuth2RestTemplate 类完成的，但是，OAuth2RestTemplate 类不传递 JWT 令牌。为了确保许可
-     * 服务做到这一点，你需要添加一个自定义的 RestTemplate bean， 它将为你执行注入。这个自定义
-     * RestTemplate 类可以在 Application 类中找到。
+     * 还需要做最后一项工作。因为许可证服务调用组织服务，所以需要确保 OAuth2 令牌被传播。
+     *
+     * 这项工作通常是通过 OAuth2RestTemplate 类完成的，但是 OAuth2RestTemplate 类并不传播基于 JWT 的令牌。
+     * 为了确保许可证服务能够做到这一点，需要添加一个自定义的 RestTemplate bean 来完成这个注入。这个自定义的
+     * RestTemplate 可以在许可证服务的 Application 类中找到。如下所示。
      *
      *     @Primary
      *     @Bean
@@ -176,60 +178,73 @@ public class Main {
      *         RestTemplate template = new RestTemplate();
      *         List interceptors = template.getInterceptors();
      *         if (interceptors == null) {
-     *             template.setInterceptors(Collections.singletonList(new UserContextInterceptor()));
+     *             // UserContextInterceptor 会将 Authorization 首部注入每个 REST 调用
+     *             template.setInterceptors(
+     *                     Collections.singletonList(new UserContextInterceptor()));
      *         } else {
+     *             // UserContextInterceptor 会将 Authorization 首部注入每个 REST 调用
      *             interceptors.add(new UserContextInterceptor());
      *             template.setInterceptors(interceptors);
      *         }
-     *
      *         return template;
      *     }
      *
-     * 在这里，你定义了一个将使用 ClientHttpRequestInterceptor 类的自定义 RestTemplate bean。
+     * 在之前的代码中，定义了一个使用 ClientHttpRequestInterceptor 的自定义 RestTemplate bean。
      *
-     * ClientHttpRequestInterceptor 类是一个 Spring 类，它允许你在执行 REST 调用之前与方法挂钩。这个
-     * 拦截器类是 UserContextInterceptor 类的变体。如下所示。
+     * ClientHttpRequestInterceptor 是一个 Spring 类，它允许在基于 REST 的调用之前挂钩要执行的功能。这个拦截
+     * 器类是之前定义的 UserContextInterceptor 类的变体。如下所示。
      *
      * public class UserContextInterceptor implements ClientHttpRequestInterceptor {
      *
-     *     private static final Logger logger = LoggerFactory.getLogger(UserContextInterceptor.class);
      *     @Override
      *     public ClientHttpResponse intercept(
      *             HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
      *             throws IOException {
      *
      *         HttpHeaders headers = request.getHeaders();
-     *         headers.add(UserContext.CORRELATION_ID, UserContextHolder.getContext().getCorrelationId());
-     *         headers.add(UserContext.AUTH_TOKEN, UserContextHolder.getContext().getAuthToken());
+     *         headers.add(UserContext.CORRELATION_ID,
+     *                 UserContextHolder.getContext().getCorrelationId());
+     *         // 将授权令牌添加到 HTTP 首部
+     *         headers.add(UserContext.AUTH_TOKEN,
+     *                 UserContextHolder.getContext().getAuthToken());
      *
      *         return execution.execute(request, body);
      *     }
      *
      * }
      *
-     * 记住，你的每一个服务使用自定义的 Servlet 过滤器（称为 UserContextFilter）从 HTTP 头解析出的认证
-     * 令牌和关联 ID。而且，你使用了已经解析过的 UserContext.AUTH_TOKEN 值来填充传出的 HTTP 调用。
+     * UserContextInterceptor 使用了之前定义的几个实用工具类。记住，每个服务都使用一个自定义 servlet 过滤器
+     * （名为 UserContextFilter）来从 HTTP 首部解析出验证令牌和关联 ID。
      *
-     * 有了这些，就足够了。现在你可以调用许可服务（或组织服务），将经过 Base64 编码的 JWT 放置在你的 HTTP
-     * 头 Authorization 字段（它的值为 Bearer <<JWT-Token>>），并且你的服务将正确读取和验证 JWT 令牌。
+     * 在这段代码中，使用已解析的 UserContext.AUTH_TOKEN 值来填入传出的 HTTP 调用。
+     *
+     * 就是这样。有了这些功能部件，现在就可以调用许可证服务（或组织服务），并将 Base64 编码的 JWT 添加到 HTTP
+     * Authorizationt 首部中，其值为 Bearer<<JWT-Token>>，服务将正确地读取和确认 JWT 令牌。
      *
      *
      *
-     * 3、扩展JWT Token
+     * 3、扩展 JWT 令牌
      *
-     * 通过将一个 Spring OAuth2 令牌增强类添加到认证服务中，可以轻松地扩展 JWT 令牌。该类的源代码可以在
-     * JWTTokenEnhancer.java 类中找到。如下所示。
+     * 如果你仔细观察上面返回的 JWT 令牌，那么就会注意到 EagleEye 的 organizationId 字段。这不是标准的 JWT
+     * 令牌字段，而是额外的字段，是在创建 JWT 令牌时通过注入新字段添加的。
      *
+     * 通过向验证服务添加一个 Spring OAuth2 令牌增强器类，可以很容易地扩展 JWT 令牌。
+     *
+     * 这个类是 JWTTokenEnhancer，如下所示。
+     *
+     * // 需要扩展 TokenEnhancer 类
      * public class JWTTokenEnhancer implements TokenEnhancer {
      *
      *     @Autowired
      *     private OrgUserRepository orgUserRepo;
      *
-     *     private String getOrgId(String userName){
-     *         UserOrganization orgUser = orgUserRepo.findByUserName( userName );
+     *     // getOrgId() 方法基于用户名查找用户的组织 ID
+     *     private String getOrgId(String userName) {
+     *         UserOrganization orgUser = orgUserRepo.findByUserName(userName);
      *         return orgUser.getOrganizationId();
      *     }
      *
+     *     // 要进行增强，需要覆盖 enhance() 方法
      *     @Override
      *     public OAuth2AccessToken enhance(OAuth2AccessToken accessToken,
      *     OAuth2Authentication authentication) {
@@ -238,71 +253,107 @@ public class Main {
      *
      *         additionalInfo.put("organizationId", orgId);
      *
+     *         // 所有附加的属性都放在 HashMap 中，并设置在传入该方法的 accessToken 变量上
      *         ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInfo);
      *         return accessToken;
      *     }
      *
      * }
      *
-     * 你需要做的最后一件事是告诉你的 OAuth2 服务使用你的 JWTTokenEnhancer 类。首先需要为
-     * JWTTokenEnhancer 类暴露为一个 Spring bean。通过向 JWTTokenStoreConfig 类中添加
-     * bean 定义来实现这一点：
+     * 需要做的最后一件事是告诉 OAuth2 服务使用 JWTTokenEnhancer 类。首先，需要为 JWTTokenEnhancer 类公开
+     * 一个 Spring bean。通过在 JWTTokenStoreConfig 类中添加一个 bean 定义来实现这一点：
      *
      *     @Bean
      *     public TokenEnhancer jwtTokenEnhancer() {
      *         return new JWTTokenEnhancer();
      *     }
      *
-     * 一旦你将 JWTTokenEnhancer 暴露为 bean，就可以将它引入到 JWTOAuth2Config 类中。这是在类的
-     * configure() 方法中完成的。
+     * 一旦将 JWTTokenEnhancer 作为 bean 公开，那么就可以将它挂钩到 JWTOAuth2Config 类中。
      *
-     * 此时，你已经可以将一个自定义字段添加到 JWT 令牌中了。你的下一个问题应该是：如何从 JWT 令牌中解
-     * 析自定义的字段。
+     * 这一点在 JWTOAuth2Config 类的 configure() 方法中完成。如下所示。
+     *
+     * @Configuration
+     * public class JWTOAuth2Config extends AuthorizationServerConfigurerAdapter {
+     *
+     *     // ...
+     *
+     *     // 自动装配在 TokenEnhancer 类中
+     *     @Autowired
+     *     private TokenEnhancer jwtTokenEnhancer;
+     *
+     *     @Override
+     *     public void configure(AuthorizationServerEndpointsConfigurer endpoints)
+     *     throws Exception {
+     *         // Spring OAuth 允许开发人员挂钩多个令牌增强器，
+     *         // 因此将令牌增强器添加到 TokenEnhancerChain 类中
+     *         TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+     *         tokenEnhancerChain.setTokenEnhancers(
+     *                 Arrays.asList(jwtTokenEnhancer, jwtAccessTokenConverter));
+     *
+     *         endpoints.tokenStore(tokenStore)
+     *                 .accessTokenConverter(jwtAccessTokenConverter)
+     *                 // 将令牌增强器挂钩到传入 configure() 方法的 endpoints 参数
+     *                 .tokenEnhancer(tokenEnhancerChain)
+     *                 .authenticationManager(authenticationManager)
+     *                 .userDetailsService(userDetailsService);
+     *     }
+     *
+     *     // ...
+     *
+     * }
+     *
+     * 到目前为止，已将自定义字段添加到 JWT 令牌中。接下来的问题是，如何从 JWT 令牌中解析自定义字段？
      *
      *
      *
-     * 4、解析来自自定义字段的 JavaScript token
+     * 4、从 JWT 令牌中解析自定义字段
      *
-     * 这里将把你的 Zuul 网关作为如何从自定义的字段中解析出 JWT 令牌的示例。具体来说，你将修改之前引入的
-     * TrackingFilter 类来解码流经网关的 JWT 令牌的 organizationId 字段。
+     * 这里将转到 Zuul 网关，以说明如何解析 JWT 令牌中的自定义字段。具体来说，将修改之前介绍的 TrackingFilter
+     * 类，以从流经网关的 JWT 令牌中解码 organizationId 字段。
      *
-     * 为此你要拉取一个 JWT 解析器库并添加到 Zuul 服务器的 pom.xml 文件。有多个令牌解析器是可用的，这里
-     * 选择了 JJWT 库（https://github.com/jwtk/jjwt）进行解析。库的 Maven 依赖是：
+     * 要完成这一点，将要引入一个 JWT 解析器库，并添加到 Zuul 服务器的 pom.xml 文件中。有多个令牌解析器可供使用，
+     * 这里选择 JJWT 库来进行解析。这个库的 Maven 依赖项是：
      *
-     *         <dependency>
-     *             <groupId>io.jsonwebtoken</groupId>
-     *             <artifactId>jjwt</artifactId>
-     *             <version>0.7.0</version>
-     *         </dependency>
+     * <dependency>
+     *   <groupId>io.jsonwebtoken</groupId>
+     *   <artifactId>jjwt</artifactId>
+     *   <version>0.7.0</version>
+     * </dependency>
      *
-     * 一旦添加了 JJWT 库，你可以为你的 TrackingFilter 类添加一个称为 getOrganizationId() 的新方法。
-     * 如下所示。
+     * 添加完 JJWT 库后，可以向 TrackingFiler 类添加一个名为 getOrganizationId() 的新方法。如下所示。
      *
-     *     private String getOrganizationId(){
+     *     private String getOrganizationId() {
      *
-     *         String result="";
-     *         if (filterUtils.getAuthToken()!=null){
-     *
-     *             String authToken = filterUtils.getAuthToken().replace("Bearer ","");
+     *         String result = "";
+     *         if (filterUtils.getAuthToken() != null) {
+     *             // 从 HTTP 首部 Authorization 解析出令牌
+     *             String authToken = filterUtils.getAuthToken().replace("Bearer ", "");
      *             try {
+     *                 // 传入用于签署令牌的签名密钥，使用 JWTS 类解析令牌
      *                 Claims claims = Jwts.parser()
      *                         .setSigningKey(serviceConfig.getJwtSigningKey().getBytes("UTF-8"))
      *                         .parseClaimsJws(authToken).getBody();
+     *                         // 从令牌中提取出 organizationId
      *                 result = (String) claims.get("organizationId");
-     *             }
-     *             catch (Exception e){
+     *             } catch (Exception e) {
      *                 e.printStackTrace();
      *             }
      *         }
      *         return result;
      *     }
      *
-     * 一 旦 getOrganizationId() 的功能实现，向 TrackingFilter 类的 run() 方法添加 System.out.println
-     * 来打印 organizationId，它解析自流经 Zuul 网关的 JWT 令牌，因此，你可以调用任何启用网关的 REST 端点。
-     * 这里以 GET 方式调用 http://localhost:5555/api/licensing/v1/organizations
-     * /e254f8c-c442-4ebe-a82a-e2fc1d1ff78a/licenses/f3831f8c-c338-4ebe-a82a-e2fc1d1ff78a。记住，
-     * 在进行此调用时，仍然需要设置所有 HTTP 表单参数和 HTTP authorization 头，以包括 Authorization 头
-     * 和令牌。
+     * 实现了 getOrganizationId() 方法之后，就将 System.out.println 添加到 TrackingFilter 的 run() 方法
+     * 中，以打印从流经 Zuul 网关的 JWT 令牌中解析出来的 organizationId。
+     *
+     * 接下来，就来调用任何启用网关的 REST 端点。这里使用如下 GET 方法调用：
+     *
+     * http://localhost:5555/api/licensing/v1/organizations/e254f8c-c442-4ebe-a82a-e2fc1d1ff78a
+     * /licenses/f3831f8c-c338-4ebe-a82a-e2fc1d1ff78a
+     *
+     * 记住，在进行这个调用时，仍然需要创建所有 HTTP 表单参数和 HTTP 授权首部，来包含 Authorization 首部和 JWT
+     * 令牌。
+     *
+     * 从输出结果可以看到，Zuul 服务从流经的 JWT 令牌中解析出了组织 ID。
      */
     public static void main(String[] args) {
 

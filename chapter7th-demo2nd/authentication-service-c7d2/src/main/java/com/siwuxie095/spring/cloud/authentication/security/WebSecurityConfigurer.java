@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 @SuppressWarnings("all")
 @Configuration
 public class WebSecurityConfigurer extends WebSecurityConfigurerAdapter {
+
     @Override
     @Bean
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -35,5 +36,6 @@ public class WebSecurityConfigurer extends WebSecurityConfigurerAdapter {
                 .and()
                 .withUser("william.woodward").password("password2").roles("USER", "ADMIN");
     }
+
 }
 

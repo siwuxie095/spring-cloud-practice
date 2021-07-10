@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TrackingFilter extends ZuulFilter {
     private static final int      FILTER_ORDER =  1;
-    private static final boolean  SHOULD_FILTER=true;
+    private static final boolean  SHOULD_FILTER = true;
     private static final Logger logger = LoggerFactory.getLogger(TrackingFilter.class);
 
     @Autowired
@@ -42,11 +42,10 @@ public class TrackingFilter extends ZuulFilter {
         return SHOULD_FILTER;
     }
 
-    private boolean isCorrelationIdPresent(){
-        if (filterUtils.getCorrelationId() !=null){
+    private boolean isCorrelationIdPresent() {
+        if (filterUtils.getCorrelationId() != null) {
             return true;
         }
-
         return false;
     }
 
@@ -54,19 +53,17 @@ public class TrackingFilter extends ZuulFilter {
         return java.util.UUID.randomUUID().toString();
     }
 
-    private String getOrganizationId(){
+    private String getOrganizationId() {
 
-        String result="";
-        if (filterUtils.getAuthToken()!=null){
-
-            String authToken = filterUtils.getAuthToken().replace("Bearer ","");
+        String result = "";
+        if (filterUtils.getAuthToken() != null) {
+            String authToken = filterUtils.getAuthToken().replace("Bearer ", "");
             try {
                 Claims claims = Jwts.parser()
                         .setSigningKey(serviceConfig.getJwtSigningKey().getBytes("UTF-8"))
                         .parseClaimsJws(authToken).getBody();
                 result = (String) claims.get("organizationId");
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -80,8 +77,7 @@ public class TrackingFilter extends ZuulFilter {
 
         if (isCorrelationIdPresent()) {
             logger.debug("tmx-correlation-id found in tracking filter: {}. ", filterUtils.getCorrelationId());
-        }
-        else{
+        } else {
             filterUtils.setCorrelationId(generateCorrelationId());
             logger.debug("tmx-correlation-id generated in tracking filter: {}.", filterUtils.getCorrelationId());
         }
@@ -91,4 +87,5 @@ public class TrackingFilter extends ZuulFilter {
         logger.debug("Processing incoming request for {}.",  ctx.getRequest().getRequestURI());
         return null;
     }
+
 }

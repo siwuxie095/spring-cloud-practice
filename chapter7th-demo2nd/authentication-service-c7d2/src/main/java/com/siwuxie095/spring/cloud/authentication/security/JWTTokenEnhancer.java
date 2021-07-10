@@ -17,11 +17,12 @@ import java.util.Map;
  */
 @SuppressWarnings("all")
 public class JWTTokenEnhancer implements TokenEnhancer {
+
     @Autowired
     private OrgUserRepository orgUserRepo;
 
-    private String getOrgId(String userName){
-        UserOrganization orgUser = orgUserRepo.findByUserName( userName );
+    private String getOrgId(String userName) {
+        UserOrganization orgUser = orgUserRepo.findByUserName(userName);
         return orgUser.getOrganizationId();
     }
 
@@ -35,5 +36,6 @@ public class JWTTokenEnhancer implements TokenEnhancer {
         ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInfo);
         return accessToken;
     }
+
 }
 

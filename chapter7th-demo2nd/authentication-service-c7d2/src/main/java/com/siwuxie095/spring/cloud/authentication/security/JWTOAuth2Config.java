@@ -41,8 +41,6 @@ public class JWTOAuth2Config extends AuthorizationServerConfigurerAdapter {
     @Autowired
     private TokenEnhancer jwtTokenEnhancer;
 
-
-
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
         TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
@@ -59,11 +57,11 @@ public class JWTOAuth2Config extends AuthorizationServerConfigurerAdapter {
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-
         clients.inMemory()
                 .withClient("eagleeye")
                 .secret("thisissecret")
                 .authorizedGrantTypes("refresh_token", "password", "client_credentials")
                 .scopes("webclient", "mobileclient");
     }
+
 }
