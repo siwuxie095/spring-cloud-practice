@@ -8,169 +8,195 @@ package com.siwuxie095.spring.cloud.chapter6th.example6th;
 public class Main {
 
     /**
-     * 创建 pre 类型 Zuul 过滤器生成关联 ID
+     * 构建第一个生成关联 ID 的 Zuul 前置过滤器
      *
-     * 在 Zuul 构建过滤器是一个非常简单的活动。首先，你要创建一个 Zuul 预过滤器，称为 TrackingFilter，
-     * 它将检查所有传入到网关的请求并确定在请求里是否有一个称为 tmx-correlation-id 的存在于 HTTP 头。
-     * tmx-correlation-id 头将包含一个独特的 GUID（全球通用的 ID），它被用于跟踪跨多个微服务的一个
-     * 用户请求。
+     * 在 Zuul 中构建过滤器是非常简单的。首先将构建一个名为 TrackingFilter 的 Zuul 前置过滤器，该过滤器将检查
+     * 所有到网关的传入请求，并确定请求中是否存在名为 tmx-correlation-id 的 HTTP 首部。tmx-correlation-id
+     * 首部将包含一个唯一的全局通用 ID（Globally Universal ID，GUID），它可用于跨多个微服务来跟踪用户请求。
      *
-     * 如果在 HTTP 头不存在 tmx-correlation-id，TrackingFilter 过滤器将生成和设置关联 ID。如果关联
-     * ID 已经存在，Zuul 不会为关联 ID 做任何事情。关联 ID 的存在意味着这个特定服务调用是执行用户请求的
-     * 服务调用链的一部分。在这种情况下，TrackingFilter 类将什么也不做。
+     * 如果在 HTTP 首部中不存在 tmx-correlation-id ，那么 Zuul TrackingFilter 将生成并设置该关联 ID。如果
+     * 已经存在关联 ID，那么 Zuul 将不会对该关联 ID 进行任何操作。关联 ID 的存在意味着该特定服务调用是执行用户
+     * 请求的服务调用链的一部分。在这种情况下，TrackingFilter 类将不执行任何操作。
      *
-     * 下面看看 TrackingFilter 的实现。
+     * 如下代码是 TrackingFilter 的实现。
      *
+     * // 所有 Zuul 过滤器必须扩展 ZuulFilter 类，并覆盖 4 个方法，即 filterType()、
+     * // filterOrder()、shouldFilter() 和 run()
      * @Component
      * public class TrackingFilter extends ZuulFilter {
+     *
      *     private static final int      FILTER_ORDER =  1;
-     *     private static final boolean  SHOULD_FILTER=true;
+     *     private static final boolean  SHOULD_FILTER = true;
      *     private static final Logger logger = LoggerFactory.getLogger(TrackingFilter.class);
      *
+     *     // 在所有过滤器中使用的常用方法都封装在 FilterUtils 类中
      *     @Autowired
      *     FilterUtils filterUtils;
      *
+     *     // filterType() 方法用于告诉 Zuul，该过滤器是前置过滤器、路由过滤器还是后置过滤器
      *     @Override
      *     public String filterType() {
      *         return FilterUtils.PRE_FILTER_TYPE;
      *     }
      *
+     *     // filterOrder() 方法返回一个整数值，指示不同类型的过滤器的执行顺序
      *     @Override
      *     public int filterOrder() {
      *         return FILTER_ORDER;
      *     }
      *
+     *     // shouldFilter() 方法返回一个布尔值来指示该过滤器是否要执行
      *     @Override
      *     public boolean shouldFilter() {
      *         return SHOULD_FILTER;
      *     }
      *
-     *     private boolean isCorrelationIdPresent(){
-     *         if (filterUtils.getCorrelationId() !=null){
+     *     // 该辅助方法检查 tmx-correlation-id 是否存在
+     *     private boolean isCorrelationIdPresent() {
+     *         if (filterUtils.getCorrelationId() !=null) {
      *             return true;
      *         }
-     *
      *         return false;
      *     }
      *
-     *     private String generateCorrelationId(){
+     *     // 该辅助方法可以生成关联 ID 的 GUID 值
+     *     private String generateCorrelationId() {
      *         return java.util.UUID.randomUUID().toString();
      *     }
      *
+     *     // run() 方法是每次服务通过过滤器时执行的代码。run() 方法检查 tmx-correlation-id 是否存在，
+     *     // 如果不存在，则生成一个关联值，并设置 HTTP 首部 tmx-correlation-id
      *     @Override
      *     public Object run() {
      *
      *         if (isCorrelationIdPresent()) {
      *             logger.debug("tmx-correlation-id found in tracking filter: {}. ",
-     *             filterUtils.getCorrelationId());
-     *         }
-     *         else{
+     *                     filterUtils.getCorrelationId());
+     *         } else {
      *             filterUtils.setCorrelationId(generateCorrelationId());
      *             logger.debug("tmx-correlation-id generated in tracking filter: {}.",
-     *             filterUtils.getCorrelationId());
+     *                     filterUtils.getCorrelationId());
      *         }
      *
      *         RequestContext ctx = RequestContext.getCurrentContext();
      *         logger.debug("Processing incoming request for {}.",
-     *         ctx.getRequest().getRequestURI());
+     *                 ctx.getRequest().getRequestURI());
      *         return null;
      *     }
+     *
      * }
      *
-     * 在 Zuul 实现一个过滤器，你必须继承 ZuulFilter 类，然后覆盖四个方法：filterType()，filterOrder()，
-     * shouldFilter() 和 run()。前三个方法描述你将在 Zuul 构建什么类型的过滤器，它与其它类型的过滤器相比
-     * 应该以什么顺序运行，以及它是否应该是活动的。最后一种方法，run()，包含过滤器将实现的业务逻辑。
+     * 要在 Zuul 中实现过滤器，必须扩展 ZuulFilter 类，然后覆盖 4 个方法，即 filterType()、filterOrder()、
+     * shouldFilter() 和 run() 方法。这段代码中，前三个方法描述了 Zuul 正在构建什么类型的过滤器，与这个类型
+     * 的其他过滤器相比它应该以什么顺序运行，以及它是否应该处于活跃状态。最后一个方法 run() 包含过滤器要实现的
+     * 业务逻辑。
      *
-     * 你已经实现了一个称为 FilterUtils 的类。这个类用于封装所有过滤器所使用的公共功能。
+     * 这里已经实现了一个名为 FilterUtils 的类。这个类用于封装所有过滤器使用的常用功能。这里不会去详细解释整个
+     * FilterUtils 类，在这里讨论的关键方法是 getCorrelationId() 和 setCorrelationId()。
      *
-     * 这里不讨论整个 FilterUtils 类，但在这里其讨论关键方法：getCorrelationId() 和 setCorrelationId()。
-     * 下面的代码显示 FilterUtils 类的 getCorrelationId() 方法的代码。
+     * 如下代码展示了 FilterUtils 类的 getCorrelationId() 方法的代码。
      *
-     *     public String getCorrelationId(){
+     *     public String getCorrelationId() {
      *         RequestContext ctx = RequestContext.getCurrentContext();
-     *
-     *         if (ctx.getRequest().getHeader(CORRELATION_ID) !=null) {
+     *         if (ctx.getRequest().getHeader(CORRELATION_ID) != null) {
      *             return ctx.getRequest().getHeader(CORRELATION_ID);
-     *         }
-     *         else{
+     *         } else {
      *             return  ctx.getZuulRequestHeaders().get(CORRELATION_ID);
      *         }
      *     }
      *
-     * 需要注意的关键点是，你首先查看 tmx-correlation-id 是否已在传入请求的 HTTP 头中设置。你使用 ctx
-     * .getRequest().getHeader(CORRELATION_ID) 调用来完成此操作。
+     * 这里要注意的关键点是，首先要检查是否已经在传入请求的 HTTP 首部设置了 tmx-correlation-ID。这里使用
+     * ctx.getRequest().getHeader(CORRELATION_ID) 调用来做到这一点。
      *
-     * 注意：在传统的 Spring MVC 或 Spring Boot 服务，RequestContext 应该是 org.springframework
-     * .web.servletsupport.RequestContext 类型。然而，Zuul 提供了一个专用的 RequestContext，它有
-     * 几个用于访问 Zuul 特定值的额外方法。这个请求上下文是 com.netflix.zuul.context 包的一部分。
+     * 注意：在一般的 Spring MVC 或 Spring Boot 服务中，RequestContext 是 org.springframework.web
+     * .servletsupport.RequestContext 类型的。然而，Zuul 提供了一个专门的 RequestContext，它具有几个
+     * 额外的方法来访问 Zuul 特定的值。该请求上下文是 com.netflix.zuul.context 包的一部分。
      *
-     * 如果它不存在，你再检查 ZuulRequestHeaders。Zuul 不允许你直接添加或修改一个传入的请求的 HTTP
-     * 请求头。如果已经添加了 tmx-correlation-id，然后尝试在过滤器后面再次访问它，它作为 ctx
-     * .getRequestHeader() 调用部分将不可用。你可能还记得，在前面 TrackingFilter 类的 run() 方法
-     * 里，你使用以下代码片段完成了这一工作。
+     * 如果 tmx-correlation-ID 不存在，接下来就检查 ZuulRequestHeaders。Zuul 不允许直接添加或修改传入请求
+     * 中的 HTTP 请求首部。如果想要添加 tmx-correlation-id，并且以后在过滤器中能够再次访问到它，实际上在 ctx
+     * .getRequestHeader() 调用的结果中并不会包含它。
      *
-     *         else{
-     *             filterUtils.setCorrelationId(generateCorrelationId());
-     *             logger.debug("tmx-correlation-id generated in tracking filter: {}.",
-     *             filterUtils.getCorrelationId());
-     *         }
+     * 为了解决这个问题，可以使用 FilterUtils 的 getCorrelationId() 方法。在 TrackingFilter 类的 run()
+     * 方法中，使用了以下代码片段：
      *
-     * 使用 FilterUtils 的 setCorrelationId() 方法设置 tmx-correlation-id。
+     * else {
+     *     filterUtils.setCorrelationId(generateCorrelationId());
+     *     logger.debug("tmx-correlation-id generated in tracking filter: {}.",
+     *     ➥  filterUtils.getCorrelationId());
+     * }
      *
-     *     public void setCorrelationId(String correlationId){
+     * tmx-correlation-id 的设置发生在 FilterUtils 的 setCorrelationId() 方法中：
+     *
+     *     public void setCorrelationId(String correlationId) {
      *         RequestContext ctx = RequestContext.getCurrentContext();
      *         ctx.addZuulRequestHeader(CORRELATION_ID, correlationId);
      *     }
      *
-     * 在 FilterUtils 类的 setCorrelationId() 方法，当你想对 HTTP 请求头添加值的时候，你用 RequestContext
-     * 的 addZuulRequestHeader() 方法。该方法将为 HTTP 头维护一个单独 的 map，当请求在 Zuul 服务器流经过滤器
-     * 时被添加。当目标服务由你的 Zuul 服务器调用时，在 ZuulRequestHeader 的 map 里面包含的数据将被合并。
+     * 在 FilterUtils 的 setCorrelationId() 方法中，要向 HTTP 请求首部添加值时，应使用 RequestContext
+     * 的 addZuulRequestHeader() 方法。该方法将维护一个单独的 HTTP 首部映射，这个映射是在请求通过 Zuul
+     * 服务器流经这些过滤器时添加的。当 Zuul 服务器调用目标服务时，包含在 ZuulRequestHeader 映射中的数据将
+     * 被合并。
      *
      *
      *
-     * 1、在服务调用中使用关联 ID
+     * 在服务调用中使用关联 ID
      *
-     * 现在你已经保证关联 ID 已被添加到流经 Zuul 的每个微服务调用，你如何确保：
-     * （1）被调用的微服务易于访问关联 ID。
-     * （2）任何下游服务调用微服务也可能将关联 ID 传播到下游调用。
+     * 既然已经确保每个流经 Zuul 的微服务调用都添加了关联 ID，那么如何确保：
+     * （1）正在被调用的微服务可以很容易访问关联 ID；
+     * （2）下游服务调用微服务时可能也会将关联 ID 传播到下游调用中。
      *
-     * 为了实现这一点，你要在你的每个微服务中创建三个类。这些类将一起从传入的 HTTP 请求中读取关联 ID（以
-     * 及你之后添加的其他信息），将它映射到一个类以易于理解，且通过应用程序中的业务逻辑方便使用，并确保关
-     * 联 ID 传播到下游的任何服务调用。
+     * 要实现这一点，需要为每个微服务构建一组三个类。这些类将协同工作，从传入的 HTTP 请求中读取关联 ID（以及
+     * 稍后添加的其他信息），并将它映射到可以由应用程序中的业务逻辑轻松访问和使用的类，然后确保关联 ID 被传播
+     * 到任何下游服务调用。
      *
-     * 许可服务通过 Zuul 里的路由被调用，并使用了一组公共类，以便将关联 ID 传播到下游服务调用。过程如下：
-     * （1）当对许可服务的调用通过 Zuul 网关时，TrackingFilter 将为进入 Zuul 的任何调用在
-     * 传入的 HTTP 头中注入一个关联 ID。
-     * （2）UserContextFilter 类是一个自定义的 HTTP Servlet 过滤器。它映射一个关联 ID 到
-     * UserContext 类。UserContext 类被用于存储调用里后续使用的本地线程存储的值。
-     * （3）许可服务业务逻辑需要执行对组织服务的调用。
-     * （4）RestTemplate 被用于调用组织服务。RestTemplate 将使用自定义的 Spring 拦截器类
-     * （UserContextInterceptor）注入关联 ID 到外部调用，作为一个 HTTP 头。
+     * 如下展示了如何使用许可证服务来构建这些不同的部分。
+     * （1）许可证服务：许可证服务是通过 Zuul 中的路由调用的。
+     * （2）UserContextFilter：UserContextFilter 将从 HTTP 首部中检索关联 ID，
+     * 并将它们存储在 UserContext 对象中。
+     * （3）许可证服务业务逻辑：服务中的业务逻辑可以访问在 UserContext 中检索到的
+     * 任何值。
+     * （4）RestTemplate 和 UserContextInterceptor：UserContextInterceptor
+     * 确保所有出站 REST 调用都具有来自 UserContext 的关联 ID。
      *
+     * PS：使用一组公共类，以便将关联 ID 传播到下游服务调用。
      *
-     * PS：重复的代码 vs. 共享库
-     *
-     * 你是否应该在微服务使用公共库的主题是微服务设计是一个很难界定的问题。微服务纯粹主义者会告诉你，你不
-     * 应该在你的服务使用一个自定义的框架，因为它在你的服务中引入了人为的依赖。业务逻辑的修改或 bug 可能
-     * 导致对所有服务进行大规模的重构。另一方面，其他的微服务从业者会说，一个纯粹的方法是不切实际的，某些
-     * 情况下存在是有意义的（像前面的 UserContextFilter 示例），创建一个公共库并在服务间共享它。
-     *
-     * 这里认为是有妥协的。在处理基础设施风格的任务时，公共库很好。如果你开始共享面向业务的类，那么你就是
-     * 在自找麻烦，因为你正在打破服务之间的界限。
-     *
-     * 这里的代码示例似乎打破了这里的建议，因为如果你查看本章中的所有服务，它们（UserContextFilter，
-     * UserContext 和 UserContextInterceptor 类）都有自己的副本。在这里使用一个非共享方法的原因
-     * 是不想通过创建一个共享库而使在这里的代码示例变得复杂，因为共享库将需要发布到第三方的 Maven 仓
-     * 库。因此，在服务的 utils 包中的所有类在所有服务中共享。
+     * 下面来看一下如上过程发生了什么。
+     * （1）当通过 Zuul 网关对许可证服务进行调用时，TrackingFilter 会为所有进入 Zuul 的调用在传入的
+     * HTTP 首部中注入一个关联 ID。
+     * （2）UserContextFilter 类是一个自定义的 HTTP servlet 过滤器。它将关联 ID 映射到 UserContext
+     * 类。UserContext 存储在本地线程存储中，以便稍后在调用中使用。
+     * （3）许可证服务业务逻辑需要执行对组织服务的调用。
+     * （4）RestTemplate 用于调用组织服务。RestTemplate 将使用自定义的 Spring 拦截器类将关联 ID 作为
+     * HTTP 首部注入出站调用（自定义的 Spring 拦截器也就是 UserContextInterceptor）。
      *
      *
-     * 1.1、USERCONTEXTFILTER：拦截传入 HTTP 请求
+     * PS：重复代码与共享库对比
      *
-     * 你将要创建的第一个类是 UserContextFilter 类。这个类是一个 HTTP Servlet 过滤器，用来拦截进入
-     * 服务的所有 HTTP 请求，并从 HTTP 请求映射关联 ID（和一些其它的值）到 UserContext 类。如下所示。
+     * 是否应该在微服务中使用公共库的话题是微服务设计中的一个灰色地带。微服务纯粹主义者会告诉你，不应该
+     * 在服务中使用自定义框架，因为它会在服务中引入人为的依赖。业务逻辑的更改或 bug 修正可能会对所有服
+     * 务造成大规模的重构。但是，其他微服务实践者会指出，纯粹主义者的方法是不切实际的，因为会存在这样一
+     * 些情况（如前面的 UserContextFilter 例子），在这些情况下构建公共库并在服务之间共享它是有意义的。
      *
+     * 这里其实存在一个中间地带。在处理基础设施风格的任务时，是很适合使用公共库的。但是，如果开始共享面
+     * 向业务的类，就是在自找麻烦，因为这样是在打破服务之间的界限。
+     *
+     * 在这里的代码示例中，似乎违背了自己的建议，因为如果查看这里的所有服务，你就会发现它们都有自己的
+     * UserContextFilter 、UserContext 和 UserContextInterceptor 类的副本。在这里之所以采用
+     * 无共享的方法，是因为不希望通过创建一个必须发布到第三方 Maven 存储库的共享库来将代码示例复杂化。
+     * 因此，该服务的 utils 包中的所有类都在所有服务之间共享。
+     *
+     *
+     *
+     * 1、UserContextFilter：拦截传入的 HTTP 请求
+     *
+     * 要构建的第一个类是 UserContextFilter 类。这个类是一个 HTTP servlet 过滤器，它将拦截进入服务的所有传入
+     * HTTP 请求，并将关联 ID（和其他一些值）从 HTTP 请求映射到 UserContext 类。如下所示。
+     *
+     * // 这个过滤器是通过使用 Spring 的 @Component 注解和实现一个
+     * // javax.servler.Filter 接口来被 Spring 注册与获取的
      * @Component
      * public class UserContextFilter implements Filter {
+     *
      *     private static final Logger logger = LoggerFactory.getLogger(UserContextFilter.class);
      *
      *     @Override
@@ -179,17 +205,18 @@ public class Main {
      *             throws IOException, ServletException {
      *         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
      *
+     *         // 过滤器从首部中检索关联 ID，并将值设置在 UserContext 类
      *         UserContextHolder.getContext()
-     *         .setCorrelationId(httpServletRequest.getHeader(UserContext.CORRELATION_ID) );
+     *                 .setCorrelationId(httpServletRequest.getHeader(UserContext.CORRELATION_ID));
      *         UserContextHolder.getContext()
-     *         .setUserId(httpServletRequest.getHeader(UserContext.USER_ID));
+     *                 .setUserId(httpServletRequest.getHeader(UserContext.USER_ID));
      *         UserContextHolder.getContext()
-     *         .setAuthToken(httpServletRequest.getHeader(UserContext.AUTH_TOKEN));
+     *                 .setAuthToken(httpServletRequest.getHeader(UserContext.AUTH_TOKEN));
      *         UserContextHolder.getContext()
-     *         .setOrgId(httpServletRequest.getHeader(UserContext.ORG_ID));
+     *                 .setOrgId(httpServletRequest.getHeader(UserContext.ORG_ID));
      *
      *         logger.debug("Special Routes Service Incoming Correlation id: {}",
-     *         UserContextHolder.getContext().getCorrelationId());
+     *                 UserContextHolder.getContext().getCorrelationId());
      *
      *         filterChain.doFilter(httpServletRequest, servletResponse);
      *     }
@@ -199,15 +226,17 @@ public class Main {
      *
      *     @Override
      *     public void destroy() {}
+     *
      * }
      *
-     * 最后，UserContextFilter 被用于映射 HTTP 头中你感兴趣的值到一个 UserContext 类。
+     * 最终，UserContextFilter 用于将感兴趣的 HTTP 首部的值映射到 Java 类 UserContext 中。
      *
      *
-     * 1.2、USERCONTEXT：使服务易于访问 HTTP 头
      *
-     * UserContext 类被用于存储通过微服务正在处理的单独的服务客户端请求 HTTP 头的值。它由一个 getter
-     * 和 setter 方法组成，用来从 java.lang.ThreadLocal 检索和存储值。如下所示。
+     * 2、UserContext：使服务易于访问 HTTP 首部
+     *
+     * UserContext 类用于保存由微服务处理的单个服务客户端请求的 HTTP 首部值。它由 getter 和 setter 方法组成，
+     * 用于从 java.lang.ThreadLocal 中检索和存储值。如下所示。
      *
      * @Component
      * public class UserContext {
@@ -216,12 +245,15 @@ public class Main {
      *     public static final String USER_ID        = "tmx-user-id";
      *     public static final String ORG_ID         = "tmx-org-id";
      *
-     *     private String correlationId= new String();
-     *     private String authToken= new String();
+     *     private String correlationId = new String();
+     *     private String authToken = new String();
      *     private String userId = new String();
      *     private String orgId = new String();
      *
-     *     public String getCorrelationId() { return correlationId;}
+     *     public String getCorrelationId() {
+     *         return correlationId;
+     *     }
+     *
      *     public void setCorrelationId(String correlationId) {
      *         this.correlationId = correlationId;
      *     }
@@ -252,67 +284,72 @@ public class Main {
      *
      * }
      *
-     * 现在 UserContext 类仅仅是一个存储从传入的 HTTP 请求获取的值的 POJO 对象。你使用一个称为
-     * UserContextHolder 的类在 ThreadLocal 变量存储 UserContext 对象，通过线程处理用户的请
-     * 求，调用任何方法可以访问该对象。如下所示。
+     * 现在 UserContext 类只是一个 POJO，它保存从传入的 HTTP 请求中获取的值。使用一个名为 UserContextHolder
+     * 的类将 UserContext 存储在 ThreadLocal 变量中，该变量可以在处理用户请求的线程调用的任何方法中访问。如下
+     * 所示。
      *
      * public class UserContextHolder {
      *     private static final ThreadLocal<UserContext> userContext =
-     *     new ThreadLocal<UserContext>();
+     *             new ThreadLocal<UserContext>();
      *
-     *     public static final UserContext getContext(){
+     *     public static final UserContext getContext() {
      *         UserContext context = userContext.get();
      *
      *         if (context == null) {
      *             context = createEmptyContext();
      *             userContext.set(context);
-     *
      *         }
      *         return userContext.get();
      *     }
      *
      *     public static final void setContext(UserContext context) {
      *         Assert.notNull(context,
-     *         "Only non-null UserContext instances are permitted");
+     *                 "Only non-null UserContext instances are permitted");
      *         userContext.set(context);
      *     }
      *
-     *     public static final UserContext createEmptyContext(){
+     *     public static final UserContext createEmptyContext() {
      *         return new UserContext();
      *     }
+     *
      * }
      *
-     * 1.3、自定义 RESTTEMPLATE 和 USERCONTEXTINTECEPTOR：确保关联 ID 的获取和向前传播
      *
-     * 最后的代码部分，将看的是 UserContextInterceptor 类。这个类是用来注入关联 ID 到任何输出的基于
-     * HTTP 的服务请求，该请求从 RestTemplate 实例中执行。这样做是为了确保你可以在服务调用之间建立联
-     * 系。
      *
-     * 为此你要使用一个 Spring 拦截器，它被注入 RestTemplate 类。如下所示。
+     * 3、自定义 RestTemplate 和 UserContextInteceptor：确保关联 ID 被传播
      *
+     * 要看的最后一段代码是 UserContextInterceptor 类。这个类用于将关联 ID 注入基于 HTTP 的传出服务请求中，
+     * 这些服务请求由 RestTemplate 实例执行。这样做是为了确保可以建立服务调用之间的联系。
+     *
+     * 要做到这一点，需要使用一个 Spring 拦截器，它将被注入 RestTemplate 类中。如下所示。
+     *
+     * // UserContextInterceptor 实现了 Spring 框架的 ClientHttpRequestInterceptor
      * public class UserContextInterceptor implements ClientHttpRequestInterceptor {
+     *
+     *     // intercept() 方法在 RestTemplate 发生实际的 HTTP 服务调用之前被调用
      *     @Override
      *     public ClientHttpResponse intercept(
      *             HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
      *             throws IOException {
      *
      *         HttpHeaders headers = request.getHeaders();
+     *         // 为传出服务调用准备 HTTP 请求首部，并添加存储在 UserContext 中的关联 ID
      *         headers.add(UserContext.CORRELATION_ID,
-     *         UserContextHolder.getContext().getCorrelationId());
+     *                 UserContextHolder.getContext().getCorrelationId());
      *         headers.add(UserContext.AUTH_TOKEN,
-     *         UserContextHolder.getContext().getAuthToken());
+     *                 UserContextHolder.getContext().getAuthToken());
      *
      *         return execution.execute(request, body);
      *     }
+     *
      * }
      *
-     * 为了使用 UserContextInterceptor，你需要定义一个 RestTemplate bean 并且将
-     * UserContextInterceptor 添加给它。要做到这一点，你要在 Application 类中添加
-     * 你自己的 RestTemplate bean 定义。下面的代码显示了添加到该类的方法。
+     * 为了使用 UserContextInterceptor，需要定义一个 RestTemplate bean，然后将 UserContextInterceptor
+     * 添加进去。为此，需要将自己的 RestTemplate bean 定义添加到 Application 类中。
      *
      *     @LoadBalanced
      *     @Bean
-     *     public RestTemplate getRestTemplate(){
+     *     public RestTemplate getRestTemplate() {
      *         RestTemplate template = new RestTemplate();
      *         List interceptors = template.getInterceptors();
      *         if (interceptors == null) {
@@ -322,21 +359,21 @@ public class Main {
      *             interceptors.add(new UserContextInterceptor());
      *             template.setInterceptors(interceptors);
      *         }
-     *
      *         return template;
      *     }
      *
-     * 使用 bean 定义，任何时候你使用 @Autowired 注解将为一个类注入 RestTemplate，你可以使用已创建
-     * 的、与 UserContextInterceptor 绑定的 RestTemplate。
+     * 有了这个 bean 定义，每当使用 @Autowired 注解将 RestTemplate 注入一个类，就会使用这段代码中创建的
+     * RestTemplate，它附带了 UserContextInterceptor。
      *
      *
-     * PS：日志聚合和认证等等
+     * PS：日志聚合和验证等
      *
-     * 现在你已经将关联 ID 传递给每个服务，当它流经调用中所涉及的所有服务时，跟踪一个事务是可能的。要做
-     * 到这一点，你需要确保每个服务日志记录到一个集中的日志聚合点，它从所有服务中捕获日志条目到一个点。
-     * 在日志聚合服务中捕获的每个日志条目都将有一个与每个条目相关联的关联 ID。实现日志聚合的解决方案超出
-     * 了这里的范围，但后续将看到如何使用 Spring Cloud Sleuth。Spring Cloud Sleuth 不会使用你在这
-     * 里创建的 TrackingFilter，但它会使用与跟踪关联 ID 相同的概念和确保在每个调用中关联 ID 都被注入。
+     * 既然已经将关联 ID 传递给每个服务，那么就可以跟踪事务了，因为关联 ID 流经所有涉及调用的服务。
+     * 要做到这一点，需要确保每个服务都记录到一个中央日志聚合点，该聚合点将从所有服务中捕获日志条目
+     * 到一个点。在日志聚合服务中捕获的每个日志条目将具有与每个条目关联的关联 ID。实施日志聚合解决
+     * 方案超出了这里的讨论范围，后续将了解如何使用 Spring Cloud Sleuth。Spring Cloud Sleuth
+     * 不会使用这里构建的 TrackingFilter，但它将使用相同的概念 —— 跟踪关联 ID，并确保在每次调用
+     * 中注入它。
      */
     public static void main(String[] args) {
 

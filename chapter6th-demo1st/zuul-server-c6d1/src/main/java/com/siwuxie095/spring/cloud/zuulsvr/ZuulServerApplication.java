@@ -23,7 +23,7 @@ public class ZuulServerApplication {
 
     @LoadBalanced
     @Bean
-    public RestTemplate getRestTemplate(){
+    public RestTemplate getRestTemplate() {
         RestTemplate template = new RestTemplate();
         List interceptors = template.getInterceptors();
         if (interceptors == null) {
@@ -32,7 +32,6 @@ public class ZuulServerApplication {
             interceptors.add(new UserContextInterceptor());
             template.setInterceptors(interceptors);
         }
-
         return template;
     }
 

@@ -14,8 +14,9 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("all")
 @Component
 public class TrackingFilter extends ZuulFilter {
+
     private static final int      FILTER_ORDER =  1;
-    private static final boolean  SHOULD_FILTER=true;
+    private static final boolean  SHOULD_FILTER = true;
     private static final Logger logger = LoggerFactory.getLogger(TrackingFilter.class);
 
     @Autowired
@@ -36,11 +37,10 @@ public class TrackingFilter extends ZuulFilter {
         return SHOULD_FILTER;
     }
 
-    private boolean isCorrelationIdPresent(){
-        if (filterUtils.getCorrelationId() !=null){
+    private boolean isCorrelationIdPresent() {
+        if (filterUtils.getCorrelationId() !=null) {
             return true;
         }
-
         return false;
     }
 
@@ -53,8 +53,7 @@ public class TrackingFilter extends ZuulFilter {
 
         if (isCorrelationIdPresent()) {
             logger.debug("tmx-correlation-id found in tracking filter: {}. ", filterUtils.getCorrelationId());
-        }
-        else{
+        } else {
             filterUtils.setCorrelationId(generateCorrelationId());
             logger.debug("tmx-correlation-id generated in tracking filter: {}.", filterUtils.getCorrelationId());
         }
@@ -63,4 +62,5 @@ public class TrackingFilter extends ZuulFilter {
         logger.debug("Processing incoming request for {}.",  ctx.getRequest().getRequestURI());
         return null;
     }
+
 }
