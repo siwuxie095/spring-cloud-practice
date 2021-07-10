@@ -17,6 +17,7 @@ import java.util.List;
  */
 @SuppressWarnings("all")
 @SpringBootApplication
+// 使服务成为一个 Zuul 服务器
 @EnableZuulProxy
 public class ZuulServerApplication {
 
