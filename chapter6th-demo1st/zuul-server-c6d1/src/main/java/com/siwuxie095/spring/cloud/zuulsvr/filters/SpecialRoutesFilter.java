@@ -44,8 +44,9 @@ import java.util.Random;
 @SuppressWarnings("all")
 @Component
 public class SpecialRoutesFilter extends ZuulFilter {
+
     private static final int FILTER_ORDER =  1;
-    private static final boolean SHOULD_FILTER =true;
+    private static final boolean SHOULD_FILTER = true;
 
     @Autowired
     FilterUtils filterUtils;
@@ -70,16 +71,15 @@ public class SpecialRoutesFilter extends ZuulFilter {
 
     private ProxyRequestHelper helper = new ProxyRequestHelper();
 
-    private AbTestingRoute getAbRoutingInfo(String serviceName){
+    private AbTestingRoute getAbRoutingInfo(String serviceName) {
         ResponseEntity<AbTestingRoute> restExchange = null;
         try {
             restExchange = restTemplate.exchange(
                     "http://specialroutesservice/v1/route/abtesting/{serviceName}",
                     HttpMethod.GET,
                     null, AbTestingRoute.class, serviceName);
-        }
-        catch(HttpClientErrorException ex){
-            if (ex.getStatusCode()== HttpStatus.NOT_FOUND) {
+        } catch(HttpClientErrorException ex) {
+            if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
                 return null;
             }
             throw ex;
@@ -87,7 +87,7 @@ public class SpecialRoutesFilter extends ZuulFilter {
         return restExchange.getBody();
     }
 
-    private String buildRouteString(String oldEndpoint, String newEndpoint, String serviceName){
+    private String buildRouteString(String oldEndpoint, String newEndpoint, String serviceName) {
         int index = oldEndpoint.indexOf(serviceName);
 
         String strippedRoute = oldEndpoint.substring(index + serviceName.length());
@@ -138,8 +138,7 @@ public class SpecialRoutesFilter extends ZuulFilter {
         InputStream requestEntity = null;
         try {
             requestEntity = request.getInputStream();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             // no requestBody is ok.
         }
         return requestEntity;
@@ -183,21 +182,16 @@ public class SpecialRoutesFilter extends ZuulFilter {
                 break;
             default:
                 httpRequest = new BasicHttpRequest(verb, uri);
-
         }
         try {
             httpRequest.setHeaders(convertHeaders(headers));
             HttpResponse zuulResponse = forwardRequest(httpclient, httpHost, httpRequest);
 
             return zuulResponse;
-        }
-        finally {
-        }
+        } finally {}
     }
 
-
-
-    public boolean useSpecialRoute(AbTestingRoute testRoute){
+    public boolean useSpecialRoute(AbTestingRoute testRoute) {
         Random random = new Random();
 
         if (testRoute.getActive().equals("N")) {
@@ -206,7 +200,7 @@ public class SpecialRoutesFilter extends ZuulFilter {
 
         int value = random.nextInt((10 - 1) + 1) + 1;
 
-        if (testRoute.getWeight()<value) {
+        if (testRoute.getWeight() < value) {
             return true;
         }
 
@@ -217,9 +211,9 @@ public class SpecialRoutesFilter extends ZuulFilter {
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
 
-        AbTestingRoute abTestRoute = getAbRoutingInfo( filterUtils.getServiceId() );
+        AbTestingRoute abTestRoute = getAbRoutingInfo(filterUtils.getServiceId());
 
-        if (abTestRoute!=null && useSpecialRoute(abTestRoute)) {
+        if (abTestRoute != null && useSpecialRoute(abTestRoute)) {
             String route = buildRouteString(ctx.getRequest().getRequestURI(),
                     abTestRoute.getEndpoint(),
                     ctx.get("serviceId").toString());
@@ -252,17 +246,14 @@ public class SpecialRoutesFilter extends ZuulFilter {
             response = forward(httpClient, verb, route, request, headers,
                     params, requestEntity);
             setResponse(response);
-        }
-        catch (Exception ex ) {
+        } catch (Exception ex ) {
             ex.printStackTrace();
-
-        }
-        finally{
+        } finally {
             try {
                 httpClient.close();
-            }
-            catch(IOException ex){}
+            } catch(IOException ex) {}
         }
     }
+
 }
 

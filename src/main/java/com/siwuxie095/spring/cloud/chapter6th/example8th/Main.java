@@ -8,41 +8,51 @@ package com.siwuxie095.spring.cloud.chapter6th.example8th;
 public class Main {
 
     /**
-     * 创建动态路由过滤器
+     * 构建动态路由过滤器
      *
-     * 最后的 Zuul 过滤器，要看的是 Zuul 路由过滤器。如果没有一个自定义的路由过滤器，Zuul 将使用之前看到的基于
-     * 映射的定义来完成路由。然而，通过构建一个 Zuul 路由过滤器，你可以为服务客户端调用将如何路由增加智能。
+     * 这里要介绍的最后一个 Zuul 过滤器是 Zuul 路由过滤器。如果没有自定义的路由过滤器，Zuul 将根据映射定义来完成
+     * 所有路由。通过构建 Zuul 路由过滤器，可以为服务客户端的调用添加智能路由。
      *
-     * 在这一部分中，你将通过创建一个路由过滤器了解 Zuul 的路由过滤器，这将将允许你做服务新版本的 A/B 测试。A/B
-     * 测试是在你推出一个新功能，然后有一部分用户使用该特性，其余的用户仍然使用旧服务。在本例中，你将模拟出一个组
-     * 织服务的新版本，你希望其中 50% 的用户转到旧服务，50% 的用户转到新服务。
+     * 这里将通过构建一个路由过滤器来学习 Zuul 的路由过滤器，从而允许对新版本的服务进行 A/B 测试。A/B 测试是推出
+     * 新功能的地方，在这里有一定比例的用户能够使用新功能，而其余的用户仍然使用旧服务。在本例中，将模拟出一个新的组
+     * 织服务版本，并希望 50% 的用户使用旧服务，另外 50% 的用户使用新服务。
      *
-     * 为此你需要创建一个称为 SpecialRoutesZuulFilter 的 Zuul 路由过滤器，它将获取通过 Zuul 被调用的服务的
-     * Eureka 服务 ID，并调用其它称为 SpecialRoutes 的微服务。SpecialRoutes 服务将检查一个内部数据库看服务
-     * 名称是否存在。如果目标服务名称存在，它将返回一个权重和服务的另一个位置的目标目的地。SpecialRoutesFilter
-     * 将获取返回的权重，并根据权重随机生成一个数，这个数将被用来确定用户的调用将被路由到其它的组织服务或在 Zuul
-     * 路由映射定义的组织服务。
+     * 为此，需要构建一个名为 SpecialRoutesFilter 的路由过滤器。该过滤器将接收由 Zuul 调用的服务的 Eureka 服
+     * 务 ID，并调用另一个名为 SpecialRoutes 的微服务。SpecialRoutes 服务将检查内部数据库以查看服务名称是否存
+     * 在。如果目标服务名称存在，它将返回服务的权重以及替代位置的目的地。SpecialRoutesFilter 将接收返回的权重，
+     * 并根据权重随机生成一个值，用于确定用户的调用是否将被路由到替代组织服务或 Zuul 路由映射中定义的组织服务。
      *
-     * 在服务客户端通过 Zuul 调用一个 "前端" 服务之后，SpecialRoutesFilter 采取会以下行动：
-     * （1）SpecialRoutesFilter 检索正在被调用的服务的服务 ID。
-     * （2）SpecialRoutesFilter 调用 SpecialRoutes 服务。SpecialRoutes 服务检查是否有为目标端点替代的端
-     * 点定义。如果记录被发现，它包含的权重将会告诉 Zuul，应按服务调用的百分比分别发送到旧服务和新服务。
-     * （3）然后，SpecialRoutesFilter 生成一个随机数，并将其与 SpecialRoutes 服务返回的权重进行比较。如果
-     * 随机生成的数字小于替代端点的权重，SpecialRoutesFilter 发送请求到服务的新版本。
-     * （4）如果 SpecialRoutesFilter 将请求发送到服务的新版本，Zuul 保持原有预定义的管道和通过任何定义的后
-     * 置过滤器发送从替代服务端点返回的响应。
+     * 如下展示了使用 SpecialRoutesFilter 时所发生的流程。
+     * （1）服务客户端：服务客户端通过 Zuul 调用服务。
+     * （2）Eureka ID：SpecialRoutesFilter 检索服务 ID。
+     * （3）SpecialRoutes 服务：SpecialRoutes 服务检查是否有其他新的端点服务，
+     * 以及将被发送到新服务和旧服务的调用百分比（权重）。
+     * （4）随机数：SpecialRoutesFilter 生成随机数，并检查权重数以确定路由。
+     * （5）ResponseFilter：如果请求被路由到其他新的服务端点，则 Zuul 仍然通过
+     * 预定义的后置过滤器将响应路由回去。
+     *
+     * PS：通过 SpecialRoutesFilter 调用组织服务的流程。
+     *
+     * 在如上过程中，在服务客户端调用 Zuul 背后的服务时，SpecialRoutesFilter 会执行以下操作。
+     * （1）SpecialRoutesFilter 检索被调用服务的服务 ID。
+     * （2）SpecialRoutesFilter 调用 SpecialRoutes 服务。SpecialRoutes 服务将查询是否有针对目标端点定义的
+     * 替代端点。如果找到一条记录，那么这条记录将包含一个权重，它将告诉 Zuul 应该发送到旧服务和新服务的服务调用的
+     * 百分比。
+     * （3）然后 SpecialRoutesFilter 生成一个随机数，并将它与 SpecialRoutes 服务返回的权重进行比较。如果随机
+     * 生成的数字大于替代端点权重的值，那么 SpecialRoutesFilter 会将请求发送到服务的新版本。
+     * （4）如果 SpecialRoutesFilter 将请求发送到服务的新版本，Zuul 会维持最初的预定义管道，并通过已定义的后置
+     * 过滤器将响应从替代服务端点发送回来。
      *
      *
      *
-     * 1、构建路由过滤器的框架
+     * 1、构建路由过滤器的骨架
      *
-     * 下面开始介绍你用来创建 SpecialRoutesFilter 的代码。到目前为止，看到的所有过滤器，实现一个 Zuul 路由过
-     * 滤器需要最多的编码工作，因为由一个路由过滤器接管 Zuul 的核心部分功能，路由和使用你自己的功能替代它。这里
-     * 不打算详细讨论整个类，而是仔细研究相关的细节。
+     * 这里将介绍用于构建 SpecialRoutesFilter 的代码。在迄今为止所看到的所有过滤器中，实现 Zuul 路由过滤器所需
+     * 进行的编码工作最多，因为通过路由过滤器，开发人员将接管 Zuul 功能的核心部分 —— 路由，并使用自己的功能替换掉
+     * 它。这里不会详细介绍整个类，而会讨论相关的细节。
      *
-     * SpecialRoutesFilter 遵循与其它 Zuul 过滤器一样的基本模式。它扩展了 ZuulFilter 类并设置 filterType()
-     * 方法返回 "route" 值。这里不会去考虑任何更多关于 filterOrder() 和 shouldFilter() 方法的解释，因为它们
-     * 不同于之前讨论的过滤器。下面的代码显示了路由过滤器框架。
+     * SpecialRoutesFilter 遵循与其他 Zuul 过滤器相同的基本模式。它扩展 ZuulFilter 类，并设置了 filterType()
+     * 方法来返回 "route" 的值。如下代码展示了路由过滤器的骨架。
      *
      * @Component
      * public class SpecialRoutesFilter extends ZuulFilter {
@@ -63,50 +73,52 @@ public class Main {
      *     }
      *
      *     @Override
-     *     public Object run() {
-     *         return null;
-     *     }
+     *     public Object run() {}
      *
      * }
      *
      *
      *
-     * 2、实现 run 方法
+     * 2、实现 run() 方法
      *
-     * SpecialRoutesFilter 真正工作的开始是在 run() 方法中。如下所示。
+     * SpecialRoutesFilter 的实际工作从代码的 run() 方法开始。如下展示了此方法的代码。
      *
      *     @Override
      *     public Object run() {
      *         RequestContext ctx = RequestContext.getCurrentContext();
      *
+     *         // 执行对 SpecialRoutes 服务的调用，以确定该服务 ID 是否有路由记录
      *         AbTestingRoute abTestRoute = getAbRoutingInfo(filterUtils.getServiceId());
      *
-     *         if (abTestRoute!=null && useSpecialRoute(abTestRoute)) {
+     *         // useSpecialRoute() 方法将会接受路径的权重，生成一个随机数，并确定是否将请求转发到替代服务
+     *         if (abTestRoute != null && useSpecialRoute(abTestRoute)) {
+     *             // 如果有路由记录，则将完整的 URL（包含路径）构建到由 specialroutes 服务指定的服务位置
      *             String route = buildRouteString(ctx.getRequest().getRequestURI(),
      *                     abTestRoute.getEndpoint(),
      *                     ctx.get("serviceId").toString());
+     *             // forwardToSpecialRoute() 方法完成转发到其他服务的工作
      *             forwardToSpecialRoute(route);
      *         }
      *
      *         return null;
      *     }
      *
-     * 这段代码的一般流程是：当一个路由请求触发 SpecialRoutesFilter 的 run() 方法，它将执行一个向
-     * SpecialRoutes 服务的 REST 调用。此服务将执行查找，并确定被调用的目标服务的 Eureka 服务 ID
-     * 是否在路由记录中存在。在 getAbRoutingInfo() 方法中调用 SpecialRoutes 服务。
+     * 这段代码的一般流程是，当路由请求触发 SpecialRoutesFilter 中的 run() 方法时，它将对 SpecialRoutes 服务
+     * 执行 REST 调用。该服务将执行查找，并确定是否存在针对被调用的目标服务的 Eureka 服务 ID 的路由记录。
      *
-     * getAbRoutingInfo() 方法如下所示。
+     * 对 SpecialRoutes 服务的调用是在 getAbRoutingInfo() 方法中完成的。getAbRoutingInfo() 方法如下所示。
      *
-     *     private AbTestingRoute getAbRoutingInfo(String serviceName){
+     *     private AbTestingRoute getAbRoutingInfo(String serviceName) {
      *         ResponseEntity<AbTestingRoute> restExchange = null;
      *         try {
+     *             // 调用 SpecialRoutesService 端点
      *             restExchange = restTemplate.exchange(
      *                     "http://specialroutesservice/v1/route/abtesting/{serviceName}",
      *                     HttpMethod.GET,
      *                     null, AbTestingRoute.class, serviceName);
-     *         }
-     *         catch(HttpClientErrorException ex){
-     *             if (ex.getStatusCode()== HttpStatus.NOT_FOUND) {
+     *         } catch(HttpClientErrorException ex) {
+     *             // 如果路由服务没有找到记录（它将返回 HTTP 状态码 404），该方法将返回空值
+     *             if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
      *                 return null;
      *             }
      *             throw ex;
@@ -114,50 +126,60 @@ public class Main {
      *         return restExchange.getBody();
      *     }
      *
-     * 一旦你已经确定有一个目标服务的路由记录，你需要确定你是否应该路由目标服务请求到替代服务的位置或由
-     * Zuul 路由集合管理的静态默认服务位置。为了做这个决定，你调用 useSpecialRoute() 方法。如下所示。
+     * 一旦确定目标服务的路由记录存在，就需要确定是否应该将目标服务请求路由到替代服务位置，或者路由到由 Zuul 路由
+     * 映射静态管理的默认服务位置。为了做出这个决定，需要调用 useSpecialRoute() 方法。如下所示。
      *
-     *     public boolean useSpecialRoute(AbTestingRoute testRoute){
+     *     public boolean useSpecialRoute(AbTestingRoute testRoute) {
      *         Random random = new Random();
      *
+     *         // 检查路由是否为活跃状态
      *         if (testRoute.getActive().equals("N")) {
      *             return false;
      *         }
      *
+     *         // 确定是否应该使用替代服务路由
      *         int value = random.nextInt((10 - 1) + 1) + 1;
      *
-     *         if (testRoute.getWeight()<value) {
+     *         if (testRoute.getWeight() < value) {
      *             return true;
      *         }
      *
      *         return false;
      *     }
      *
-     * 这个方法做了两件事。首先，该方法检查从 SpecialRoutes 服务返回的 AbTestingRoute 记录上的有效
-     * 域。如果记录设置为 "N"，useSpecialRoute() 方法不做任何事情，因为在这一刻你不想做任何路由。其
-     * 次，该方法生成一个在 1 到 10 之间的随机数。然后，该方法将检查返回路由的权重是否小于随机生成的数
-     * 字。如果条件为真，则 useSpecialRoute 方法返回 true，表示你希望使用该路由。
+     * 这个方法做了两件事。首先，该方法检查从 SpecialRoutes 服务返回的 AbTestingRoute 记录中的 active 字段。
+     * 如果该记录设置为 "N" ，则 useSpecialRoute() 方法不应该执行任何操作，因为现在不希望进行任何路由。其次，
+     * 该方法生成 1 到 10 之间的随机数。然后，该方法将检查返回路由的权重是否小于随机生成的数。如果条件为 true，
+     * 则 useSpecialRoute() 方法将返回 true，表示确实希望使用该路由。
      *
-     * 一旦你确定要路由服务请求进入 SpecialRoutesFilter，你就要将请求转发到目标服务。
+     * 一旦确定要路由进入 SpecialRoutesFilter 的服务请求，就需要将请求转发到目标服务。
      *
      *
      *
      * 3、转发路由
      *
-     * 实际传递到下游服务的路由是大多数工作发生在 SpecialRoutesFilter 中的地方。而 Zuul 确实提供了辅助功能，
-     * 使这项工作更容易，大部分的工作仍在开发者。forwardToSpecialRoute() 方法为你提供转发工作。此方法中的代
-     * 码大量借鉴了 Spring Cloud SimpleHostRoutingFilter 类的源代码。虽然这里不打算讨论该方法中调用的所有
-     * 辅助方法，但还是要浏览这个方法中的代码，如下所示。
+     * SpecialRoutesFilter 中出现的大部分工作是到下游服务的路由的实际转发。虽然 Zuul 确实提供了辅助方法来使这项
+     * 任务更容易，但开发人员仍然需要负责大部分工作。forwardToSpecialRoute() 方法负责转发工作。该方法中的代码大
+     * 量借鉴了 Spring Cloud 的 SimpleHostRoutingFilter 类的源代码。
+     *
+     * 虽然这里不会介绍 forwardToSpecialRoute() 方法中调用的所有辅助方法，但是会介绍该方法中的代码，如下所示。
+     *
+     *     // helper 变量是类 ProxyRequestHelper 类型的一个实例变量。这是 Spring Cloud
+     *     // 提供的类，附带有用于代理服务请求的辅助方法
+     *     private ProxyRequestHelper helper = new ProxyRequestHelper();
      *
      *     private void forwardToSpecialRoute(String route) {
      *         RequestContext context = RequestContext.getCurrentContext();
      *         HttpServletRequest request = context.getRequest();
      *
+     *         // 创建将发送到服务的所有 HTTP 请求首部的副本
      *         MultiValueMap<String, String> headers = this.helper
      *                 .buildZuulRequestHeaders(request);
+     *         // 创建所有 HTTP 请求参数的副本
      *         MultiValueMap<String, String> params = this.helper
      *                 .buildZuulRequestQueryParams(request);
      *         String verb = getVerb(request);
+     *         // 创建将被转发到替代服务的 HTTP 主体的副本
      *         InputStream requestEntity = getRequestBody(request);
      *         if (request.getContentLength() < 0) {
      *             context.setChunkedRequestBody();
@@ -169,45 +191,46 @@ public class Main {
      *
      *         try {
      *             httpClient  = HttpClients.createDefault();
+     *             // 使用 forward() 辅助方法（未显示）调用替代服务
      *             response = forward(httpClient, verb, route, request, headers,
      *                     params, requestEntity);
+     *             // 通过 setResponse() 辅助方法将服务调用的结果保存回 Zuul 服务器
      *             setResponse(response);
-     *         }
-     *         catch (Exception ex ) {
+     *         } catch (Exception ex ) {
      *             ex.printStackTrace();
-     *
-     *         }
-     *         finally{
+     *         } finally {
      *             try {
      *                 httpClient.close();
-     *             }
-     *             catch(IOException ex){}
+     *             } catch (IOException ex) {}
      *         }
      *     }
      *
-     * 这段代码的关键之处在于，你将从传入的 HTTP 请求（头参数、HTTP 谓词和报文体）中复制所有值到在目标服务上
-     * 被调用的新请求。forwardToSpecialRoute() 方法获取从目标服务返回的响应并将其设置在用于 Zuul HTTP 请
-     * 求上下文。这是通过 setResponse() 辅助方法完成的。Zuul 使用 HTTP 请求上下文返回从服务客户端调用返回
-     * 的响应。
+     * 这段代码中的关键要点是，将传入的 HTTP 请求（首部参数、HTTP 动词和主体）中的所有值复制到将在目标服务上调用的
+     * 新请求。然后 forwardToSpecialRoute() 方法从目标服务返回响应，并将响应设置在 Zuul 使用的 HTTP 请求上下文
+     * 中。上述过程通过 setResponse() 辅助方法（未显示）完成。Zuul 使用 HTTP 请求上下文从调用服务客户端返回响应。
      *
      *
      *
-     * 4、把代码整合在一起
+     * 4、整合
      *
-     * 现在你已经实现了 SpecialRoutesFilter，你可以通过调用许可服务来看一看它的行为。即通过许可服务调用组织
-     * 服务来检索组织的联系人数据。
+     * 既然已经实现了 SpecialRoutesFilter，就可以通过调用许可证服务来查看它的动作。即 通过许可证服务调用组织服务
+     * 来检索组织的联系人数据。
      *
-     * 在代码示例中，specialroutesservice 有一条组织服务的数据库记录，将到组织服务的调用请求 50% 路由到现
-     * 有的组织服务（在 Zuul 映射）和 50% 路由到另一个组织服务。从 SpecialRoutes 服务返回的替代的组织服务
-     * 路由将是 http://orgservice-new，并不会直接从 Zuul 访问。为了区分两个服务，这里已经修改了组织服务在
-     * 组织服务返回的联系人名字值前面添加 "OLD::" 和 "NEW::" 文本。
+     * 在代码示例中，specialroutesservice 具有用于组织服务的数据库记录，该数据库记录指示有 50% 的概率把对组织服
+     * 务的请求路由到现有的组织服务（Zuul 中映射的那个），50% 的概率路由到替代组织服务。从 SpecialRoutes 服务返
+     * 回的替代组织服务路径是 http://orgservice-new，并且不能直接从 Zuul 访问。为了区分这两个服务，这里修改了
+     * 组织服务，将文本 "OLD::" 和 "NEW::" 添加到组织服务返回的联系人姓名的前面。
      *
-     * 如果你现在通过 Zuul 点击许可服务端点 http://localhost:5555/api/licensing/v1/organizations
-     * /e254f8c-c442-4ebe-a82ae2fc1d1ff78a/licenses/f3831f8c-c338-4ebe-a82a-e2fc1d1ff78a
-     * 你应该看到从许可服务调用返回的 contactName 值在 OLD:: 和 NEW:: 之间翻转。
+     * 如果现在通过 Zuul 访问许可证服务端点，应该看到从许可证服务调用返回的 contactName 在 OLD:: 和 NEW:: 值
+     * 之间变化。
      *
-     * 一个 Zuul 路由过滤器的实现与前置过滤器或后置过滤器相比需要做更多的工作，但它也是 Zuul 最强大的一部分，
-     * 因为你可以轻松地将智能添加到服务路由的方式中。
+     * http://localhost:5555/api/licensing/v1/organizations/e254f8c-c442-4ebe-a82a-
+     * ➥  e2fc1d1ff78a/licenses/f3831f8c-c338-4ebe-a82a-e2fc1d1ff78a
+     *
+     * PS：当访问替代组织服务时，将会看到 NEW 被添加到 contactName 前面。
+     *
+     * 实现 Zuul 路由过滤器确实比实现前置过滤器或后置过滤器需要更多的工作，但它也是 Zuul 最强大的部分之一，因为
+     * 开发人员可以轻松地让服务路由方式变得智能。
      */
     public static void main(String[] args) {
 
